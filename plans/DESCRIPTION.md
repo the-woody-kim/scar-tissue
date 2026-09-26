@@ -48,6 +48,9 @@ recall ranks incidents by similarity.
 and the brief the proposer saw with the candidates it returned. It is read-only: the harness never
 reads a trace back, so the evaluator stays the only judge.
 
+**Framework-agnostic:** the harness sits between the agent and its tools, not inside the agent.
+Any agent that calls tools over MCP runs under the active policy; a Strands agent is included.
+
 **Why it matters:** harnesses, not bigger models, are where agents get better — but an agent that
 takes real actions can't learn by trial and error in production. Scar Tissue gives it a gate.
 Agents that take actions hit retry-after-success in production, and today the fix is a human
@@ -56,5 +59,5 @@ showed recursive harness edits overfit unless regularized; this applies that dis
 incident at a time.
 
 **Built with:** MongoDB Atlas (change streams, `$lookup`, TTL indexes), OpenRouter (GPT-5.4 mini
-executor, GPT-6 Sol proposer), LangSmith (tracing), Next.js, TypeScript, zod. Built on 09-26; only the plan existed
+executor, GPT-6 Sol proposer), LangSmith (tracing), MCP with Strands Agents, Next.js, TypeScript, zod. Built on 09-26; only the plan existed
 beforehand.

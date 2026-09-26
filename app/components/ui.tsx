@@ -1,18 +1,12 @@
 import type { ReactNode } from "react";
 import type { CaseView, Outcome, Section } from "@/lib/state";
+import type { Segment } from "./story";
 
 export function Eyebrow({ children, tone = "muted" }: { children: ReactNode; tone?: "muted" | "fail" | "accent" }) {
   const color = tone === "fail" ? "text-fail" : tone === "accent" ? "text-accent" : "text-muted";
   return <div className={`font-mono text-[11px] uppercase tracking-[0.1em] ${color}`}>{children}</div>;
 }
 
-export function Chip({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return (
-    <span className={`rounded-[5px] border border-line px-[7px] py-px font-mono text-[11.5px] ${className}`}>
-      {children}
-    </span>
-  );
-}
 
 export function SectionChip({ section }: { section: Section }) {
   return (
@@ -22,22 +16,27 @@ export function SectionChip({ section }: { section: Section }) {
   );
 }
 
-export function Stamp({ tone, children }: { tone: "accent" | "fail"; children: ReactNode }) {
-  const color = tone === "accent" ? "border-accent text-accent" : "border-fail text-fail";
+// accent: promoted · fail: rejected · screened: dashed, it never ran · now: evaluating
+export function Stamp({ tone, children }: { tone: "accent" | "fail" | "screened" | "now"; children: ReactNode }) {
+  const color =
+    tone === "accent"
+      ? "border-accent text-accent"
+      : tone === "now"
+        ? "border-ink text-ink"
+        : tone === "screened"
+          ? "border-dashed border-fail text-fail"
+          : "border-fail text-fail";
   return (
-    <span className={`rounded-md border px-[9px] py-[3px] font-mono text-[11px] font-semibold tracking-[0.1em] ${color}`}>
+    <span className={`shrink-0 rounded-md border px-[9px] py-[3px] font-mono text-[11px] font-semibold tracking-[0.1em] ${color}`}>
       {children}
     </span>
   );
 }
 
-export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <div className={`flex flex-col rounded-xl border border-line bg-card ${className}`}>{children}</div>;
-}
 
 export function Panel({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
-    <section className={`flex min-h-0 flex-col overflow-hidden rounded-[14px] border border-line bg-panel p-[18px] ${className}`}>
+    <section className={`flex min-h-0 flex-col overflow-hidden rounded-[14px] border border-line bg-panel px-[22px] py-5 ${className}`}>
       {children}
     </section>
   );
@@ -66,17 +65,17 @@ const OUTCOME: Record<Outcome, { icon: "check" | "cross" | "dash"; tone: string;
 export function CaseChip({ c }: { c: CaseView }) {
   const o = OUTCOME[c.outcome];
   return (
-    <div className={`flex h-6 items-center gap-1.5 overflow-hidden whitespace-nowrap rounded-md border px-2 font-mono text-[11.5px] ${o.tone} ${c.lit ? o.lit : ""}`}>
+    <div className={`flex h-[26px] items-center gap-1.5 overflow-hidden whitespace-nowrap rounded-md border px-2 font-mono text-[11px] ${o.tone} ${c.lit ? o.lit : ""}`}>
       <Icon kind={o.icon} />
       <span>{c.id}</span>
     </div>
   );
 }
 
-export function CaseGrid({ cases, row = false }: { cases: CaseView[]; row?: boolean }) {
-  const cols = row || cases.length > 4 ? "grid-cols-3" : "grid-cols-2";
+export function CaseGrid({ cases }: { cases: CaseView[] }) {
+  const cols = cases.length > 4 ? "grid-cols-3" : "grid-cols-4";
   return (
-    <div className={`grid ${cols} gap-[5px]`}>
+    <div className={`grid ${cols} gap-1.5`}>
       {cases.map((c) => (
         <CaseChip key={c.id} c={c} />
       ))}
@@ -114,3 +113,26 @@ function underline(line: string, highlights: string[]): ReactNode {
 }
 
 export const plural = (n: number, noun: string) => `${n} ${noun}${n === 1 ? "" : "s"}`;
+
+// A sentence whose failures read red and whose wins read in the accent.
+export function Segments({ parts }: { parts: Segment[] }) {
+  return (
+    <>
+      {parts.map((p, i) => (
+        <span key={i} className={p.tone === "fail" ? "text-fail" : p.tone === "win" ? "text-accent" : undefined}>
+          {p.t}
+        </span>
+      ))}
+    </>
+  );
+}
+
+// Panel section heading: a plain title and a mono aside.
+export function PanelHead({ title, aside }: { title: string; aside?: ReactNode }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3">
+      <h2 className="text-[15px] font-semibold">{title}</h2>
+      {aside && <span className="font-mono text-[11.5px] text-muted">{aside}</span>}
+    </div>
+  );
+}

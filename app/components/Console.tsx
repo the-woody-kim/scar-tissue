@@ -4,11 +4,13 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { BeatId, ConsoleState, FaultPick } from "@/lib/state";
-import BeatsRow from "./BeatsRow";
-import HarnessPanel from "./HarnessPanel";
-import Header from "./Header";
-import MemoryPanel from "./MemoryPanel";
-import RunPanel from "./RunPanel";
+import FixesPanel from "./FixesPanel";
+import PolicyPill from "./PolicyPill";
+import Sidebar from "./Sidebar";
+import Tiles from "./Tiles";
+import TracePanel from "./TracePanel";
+import { tell } from "./story";
+import { Segments } from "./ui";
 
 // In fixture mode a beat button moves to that beat's saved state instead of calling the engine.
 const FIXTURE_FOR: Record<BeatId | "reset", string> = {
@@ -70,33 +72,46 @@ export default function Console({ initial, fixture }: { initial?: ConsoleState; 
     else post("/api/reset");
   };
 
+  const story = state ? tell(state) : null;
+
   return (
     <main className="flex min-h-screen items-center justify-center">
-      <div className="flex h-[920px] w-[1536px] flex-col gap-4 px-6 pb-6 pt-5">
-        {state ? (
-          <>
-            <Header state={state} fixture={fixture} />
-            <BeatsRow state={state} onBeat={onBeat} onReset={onReset} />
-            <div className="flex min-h-0 grow gap-4">
-              <RunPanel run={state.run} />
-              <HarnessPanel harness={state.harness} versions={state.versions} check={state.run?.check ?? null} />
-              <MemoryPanel memory={state.memory} />
+      {state && story ? (
+        <div className="flex h-[920px] w-[1536px] overflow-hidden">
+          <Sidebar state={state} story={story} fixture={fixture} onBeat={onBeat} onReset={onReset} />
+          <div className="flex min-w-0 grow flex-col gap-5 px-8 py-7">
+            <header className="flex shrink-0 items-start justify-between gap-8">
+              <div className="flex min-w-0 flex-col gap-1">
+                <div className={`font-mono text-[11px] uppercase tracking-[0.1em] ${state.running ? "text-ink" : "text-muted"}`}>{story.eyebrow}</div>
+                <h1 className="text-[26px] font-[650] tracking-[-0.01em]">{story.title}</h1>
+                <p className="text-[15px] text-soft">
+                  <Segments parts={story.headline} />
+                </p>
+              </div>
+              <div className="shrink-0">
+                <PolicyPill policy={state.policy} />
+              </div>
+            </header>
+            <Tiles tiles={story.tiles} />
+            <div className="grid min-h-0 grow grid-cols-[500px_minmax(0,1fr)] gap-4">
+              <TracePanel key={story.mode} story={story} memory={state.memory} />
+              <FixesPanel story={story} harness={state.harness} versions={state.versions} />
             </div>
-          </>
-        ) : (
-          <div className="m-auto flex flex-col items-center gap-2 text-center">
-            <div className="text-[19px] font-[650]">Scar Tissue</div>
-            <p className="text-[13px] text-muted">
-              Waiting for the engine{error ? ` — ${error}` : ""}. Open{" "}
-              <Link className="text-ink underline" href="/?fixture=order-1">
-                /?fixture=order-1
-              </Link>{" "}
-              to see the page with saved state.
-            </p>
+            {error && <p className="shrink-0 font-mono text-xs text-fail">{error}</p>}
           </div>
-        )}
-        {state && error && <p className="font-mono text-xs text-fail">{error}</p>}
-      </div>
+        </div>
+      ) : (
+        <div className="m-auto flex flex-col items-center gap-2 text-center">
+          <div className="text-[19px] font-[650]">Scar Tissue</div>
+          <p className="text-[13px] text-muted">
+            Waiting for the engine{error ? ` — ${error}` : ""}. Open{" "}
+            <Link className="text-ink underline" href="/?fixture=order-1">
+              /?fixture=order-1
+            </Link>{" "}
+            to see the page with saved state.
+          </p>
+        </div>
+      )}
     </main>
   );
 }

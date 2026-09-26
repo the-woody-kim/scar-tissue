@@ -2,6 +2,7 @@
 
 @theme {
   --color-bg: #0b0c0d;
+  --color-rail: #0e0f11;
   --color-panel: #121315;
   --color-card: #181a1d;
   --color-code: #0e0f11;
@@ -9,6 +10,7 @@
   --color-line-strong: #3a3d42;
   --color-ink: #ecebe7;
   --color-code-ink: #d9d6cf;
+  --color-soft: #c9c7c1;
   --color-muted: #9d9b95;
   --color-faint: #4a4d52;
   --color-accent: #6fd3b1;

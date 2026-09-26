@@ -18,6 +18,14 @@ export const models = {
   proposer: () => process.env.OPENROUTER_PROPOSER_MODEL || process.env.PROPOSER_MODEL || "openai/gpt-5.4-mini",
 };
 
+// Optional, for repeatable experiments: a fixed seed, and one provider with no fallback, so a
+// retried or rate-limited call can't land on a different backend.
+function pinning() {
+  const seed = process.env.LLM_SEED ? { seed: Number(process.env.LLM_SEED) } : {};
+  const only = process.env.OPENROUTER_PROVIDER;
+  return { ...seed, ...(only ? { provider: { order: [only], allow_fallbacks: false } } : {}) };
+}
+
 // Every model call goes through here: at most LLM_CONCURRENCY in flight, and 429s back off and retry.
 type Params = OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming;
 const g = globalThis as unknown as { __st_llm?: { active: number; queue: (() => void)[] } };
@@ -31,7 +39,7 @@ export async function chat(params: Params): Promise<OpenAI.Chat.Completions.Chat
   try {
     for (let attempt = 0; ; attempt++) {
       try {
-        return await llm().chat.completions.create(params);
+        return await llm().chat.completions.create({ ...params, ...pinning() } as Params);
       } catch (e) {
         const status = (e as { status?: number }).status;
         if (status !== 429 || attempt >= 6) throw e;

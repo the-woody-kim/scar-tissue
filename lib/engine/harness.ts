@@ -314,7 +314,7 @@ export async function activePolicy(d: Db): Promise<{ version: number; policy: Po
   return { version: p.version, policy: Policy.parse(p.policy) };
 }
 
-export const runBeat = span("beat", playBeat, (beat, pick) => ({ beat, pick: pick ?? "after_commit" }));
+export const runBeat = span("beat", playBeat, (beat: string, pick?: Pick) => ({ beat, pick: pick ?? "after_commit" }));
 
 async function playBeat(beat: string, pick?: Pick) {
   const d = await db();
@@ -400,7 +400,7 @@ const KNOWN = [
   ...CUSTOMERS.map(({ id, name }) => ({ id, name })),
 ];
 
-export const runPrompt = span("prompt", playPrompt, (prompt, pick) => ({ prompt, pick: pick ?? "none" }));
+export const runPrompt = span("prompt", playPrompt, (prompt: string, pick?: Pick) => ({ prompt, pick: pick ?? "none" }));
 
 async function playPrompt(prompt: string, pick: Pick = "none") {
   const d = await db();

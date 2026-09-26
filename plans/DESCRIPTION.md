@@ -46,10 +46,10 @@ recall ranks incidents by similarity.
 
 **Why it matters:** harnesses, not bigger models, are where agents get better — but an agent that
 takes real actions can't learn by trial and error in production. Scar Tissue gives it a gate.
-Agents that take actions hit retry-after-success in production, and today the
-fix is a human postmortem. Scar Tissue makes the postmortem executable and tested. RRSI (arXiv
-2609.24972) showed recursive harness edits overfit unless regularized; this applies that
-discipline live, one incident at a time.
+Agents that take actions hit retry-after-success in production, and today the fix is a human
+postmortem. Scar Tissue makes the postmortem executable and tested. RRSI (arXiv 2609.24972)
+showed recursive harness edits overfit unless regularized; this applies that discipline live, one
+incident at a time.
 
 **Built with:** MongoDB Atlas (change streams, `$lookup`, TTL indexes), OpenRouter (GPT-5.4 mini
 executor, GPT-6 Sol proposer), Next.js, TypeScript, zod. Built on 09-26; only the plan existed

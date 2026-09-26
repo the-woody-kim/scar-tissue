@@ -39,12 +39,12 @@ longer, the extra goes to rehearsal and the cut list stays cut.
 | T+ | Clock | Phase | Done = |
 |---|---|---|---|
 | 0:00–0:20 | | **Setup** — create-next-app (beside the folder, then copied in: `AGENTS.md` step 1), public repo, `.env.local`, collections, vector index first | `npm run reset` rebuilds a seeded, empty database |
-| 0:20–1:30 | | **Engine (Task 1a)** — tools, faults, policy engine, executor, trace | `npm run beat prep-1` → 2 prep rituals + trace in Atlas |
+| 0:20–1:30 | | **Engine (Task 1a)** — tools, faults, policy engine, executor, trace | `npm run beat order-1` → 2 orders + trace in Atlas |
 | 1:30–2:15 | | **Evaluator (Task 1b)** — invariants, scopes, three outcomes | `npm run eval` prints v1's grid |
-| 2:15–3:00 | | **Learning loop (Task 1c)** — incident → cases → propose → eval → promote → reload | one REJECTED, one PROMOTED; prep-2 clean |
+| 2:15–3:00 | | **Learning loop (Task 1c)** — incident → cases → propose → eval → promote → reload | one REJECTED, one PROMOTED; order-2 clean |
 | 3:00–3:15 | | Eat, away from the screen | — |
-| **3:15** | | **HALFWAY GATE** | Is prep-1 → v2 → prep-2 working from the CLI? If no → cut the transfer (cut list #3) |
-| 3:15–4:00 | | **Memory + transfer (Task 2)** | grant → v4 promoted before any recovery log; post-1 clean |
+| **3:15** | | **HALFWAY GATE** | Is order-1 → v2 → order-2 working from the CLI? If no → cut the transfer (cut list #3) |
+| 3:15–4:00 | | **Memory + transfer (Task 2)** | grant → v4 promoted before any refund; refund-1 clean |
 | 4:00–5:00 | | **UI** — three panels + fault picker | each beat is one click and reads at 1080p |
 | **5:00** | | **FEATURE FREEZE** (= submission − 1:30) | nothing new after this |
 | 5:00–5:15 | | Wipe the DB; one full run with `LLM_MODE=record` | fixtures saved |
@@ -87,22 +87,21 @@ Say the version the demo actually reached.
 |---|---|
 | "What's recursive about it?" | The one line, then: "It rewrites everything except the part that judges whether a rewrite is good. A system that can rewrite its own referee isn't self-improving — it's self-certifying." |
 | "Isn't this a retry wrapper?" | "The retry wrapper caused the bug. The harness wrote the check from the trace, rejected its own first idea because a fixed test proved it wrong, and carried the lesson to a tool it had never used before that tool ever failed." |
-| "Isn't it just memorising the incident?" | "It can't. A fixed screen throws out any fix that names the athlete, the class or the record before it runs — a fix has to work for everyone. Then it has to pass cases it wasn't written for, and carry to a tool that hasn't failed yet. That's the overfitting problem RRSI, a paper from the 21st, found in self-improving harnesses. Scar Tissue handles it live, one incident at a time." |
+| "Isn't it just memorising the incident?" | "It can't. A fixed screen throws out any fix that names the customer, the product or the order before it runs — a fix has to work for everyone. Then it has to pass cases it wasn't written for, and carry to a tool that hasn't failed yet. That's the overfitting problem RRSI, a paper from the 21st, found in self-improving harnesses. Scar Tissue handles it live, one incident at a time." |
 | "Why not idempotency keys?" | "When the API takes one, use it — that's a fix this harness should propose. This one refuses them, like many APIs an agent calls but doesn't own; send one and the call fails. The fix isn't the point: the harness found it, tested it, and threw out a worse one by itself." |
-| "Is it scripted?" | "Pick a fault." Hand them the picker and press *Assign another prep*. "Only the fault injector knows what you picked." (What each pick should do: `SPEC.md` §10.) |
+| "Is it scripted?" | "Pick a fault." Hand them the picker and press *Run another order*. "Only the fault injector knows what you picked." (What each pick should do: `SPEC.md` §10.) |
 | "What stops it learning something harmful?" | "It can only change a typed policy. The evaluator is code it can't touch. Uncertain never ships. It can narrow tool access, never widen it. Every version is hashed with the incident and the test run that earned it, and rollback is one pointer." |
 | "What if the model proposes nonsense?" | "The evaluator rejects it, and the rejection is stored. The next time a similar incident comes up, the proposer sees what was already rejected, and why." |
 | "Why MongoDB?" | "It holds the data the agent acts on, every trace, the versioned policy the runtime hot-reloads through a change stream, and the memory. One aggregation goes from a vector hit to the fixes it produced — promoted and rejected." |
 | "How hard is this to recreate?" | "Fault injection, a policy engine, a three-outcome evaluator, cases derived from incidents and transferred to new tools, hash-pinned reload. The model writes candidates; everything that decides is code." |
 | "Did you build this today?" | "Yes. I wrote the plan and the docs last night — no code. The first commit is from this morning." |
 | "Limitations?" | "The invariants are written by hand per kind of tool. The faults are injected. Matching by fields can confuse two identical legitimate requests inside the window — request ids end to end are the next step." |
-| "Impact?" | "A coach reads these records to decide whom to chase; a duplicate sends them after an athlete who did the work. Every team shipping agents that write records hits retry-after-success — a gym today, a D1 program next, payments anywhere. Today the fix is a human postmortem. This makes the postmortem executable and tested." |
+| "Impact?" | "Every team shipping agents that take actions — orders, refunds, payments — hits retry-after-success. Today the fix is a human postmortem. This makes the postmortem executable and tested." |
 
 ## Demo survival rules
 
 1. Record from a wiped database — the first click in the video is the cold path.
-2. Real-looking data only: Kestrel MMA (fictional), named athletes, real class times. No real gym,
-   coach or athlete names on screen.
+2. Real-looking data only: Northside Grocer (fictional), named customers, real prices.
 3. The backup take exists by T+5:25. If a live take breaks, use it; don't apologise.
 4. Speed-ramp waits with a visible "4×". Never cut a result out of order.
 5. Browser full screen (⌃⌘F) at 110%, so the whole 1536 × 920 page is in frame. Notifications off.

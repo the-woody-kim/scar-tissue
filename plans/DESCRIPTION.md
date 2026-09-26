@@ -1,5 +1,34 @@
 # Submission description
 
+## Paste this (short form)
+
+**Scar Tissue: every agent failure becomes a tested upgrade to its own harness.**
+Statement One, Recursive Harnessing · github.com/the-woody-kim/scar-tissue
+
+An LLM agent takes orders for a fictional grocery in MongoDB Atlas. When a run breaks an
+invariant (the order API times out after saving, and the default retry orders twice), the harness
+runs with no human in the loop. It turns the incident into test cases, recalls past fixes, promoted
+and rejected, with one `$lookup`, and asks a model for three candidate changes to its own policy:
+rules, guardrails, context or tool access, as typed JSON. Candidates that name the incident are
+screened out. The rest run against a fixed evaluator the agent can't edit, and each case is pass,
+fail or uncertain. Only a candidate that passes every case ships, and the running agent reloads it
+through a change stream, pinned by hash.
+
+In the demo, "never retry" is rejected because it breaks a case where retrying was right. A note
+to the agent is rejected because it still orders twice. "Verify before retry" ships. Then the agent
+is granted a refund tool it has never used: the order lesson becomes refund tests, and a fix ships
+before the first refund.
+
+On 11 held-out tasks (3 runs each), the same model went from 36% correct to 94%, and duplicates
+fell from 64% of runs to none. Only the harness changed.
+
+Built with MongoDB Atlas (change streams, `$lookup`, TTL indexes), OpenRouter, LangSmith, MCP with
+Strands Agents, Next.js, TypeScript and zod.
+
+---
+
+## Long form
+
 Numbers below are from the live run on 2026-09-26 at 14:35 (reset → four beats, about a minute
 end to end). Re-check them against the recorded take before submitting.
 

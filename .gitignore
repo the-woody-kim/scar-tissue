@@ -8,6 +8,7 @@
 
 # Next.js defaults, kept here because the scaffold is copied in without overwriting this file
 /node_modules
+/examples/*/node_modules
 /.next/
 /out/
 /build

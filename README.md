@@ -91,12 +91,29 @@ npm run dev
 
 `npm run reset` wipes and reseeds Atlas; `npm run beat order-1` runs a beat from the CLI.
 
+### Any agent, under the harness (MCP)
+
+`/api/mcp` serves the order tools over MCP (Streamable HTTP). A session pins the active policy
+when it connects, sees only the granted tools, and every call goes through the same rules and
+guardrails as the built-in agent. `?fault=after_commit` (or any picker value) sets the session's
+fault. Sessions are recorded in `runs` with `scope: "mcp"`, but they don't feed learning: an
+outside agent's task has no expected result to check against.
+
+`examples/strands/` is a [Strands Agents](https://strandsagents.com) order agent that reaches
+the store only through that server. It has its own `package.json` because Strands pins `openai@6`.
+
+```bash
+cd examples/strands && npm install
+npm run agent -- --fault after_commit
+```
+
 ## Layout
 
 ```
 app/                  the page (three panels, the beats row, the fault picker)
 lib/state.ts          the GET /api/state contract between the page and the engine
-lib/                  tools, fault injector, policy engine, executor, evaluator, harness
+lib/                  tools, fault injector, policy engine, executor, evaluator, harness, MCP server
+examples/strands/     a Strands agent that runs under the harness through /api/mcp
 fixtures/state/       saved page states; regenerate with node fixtures/state/make.mjs
 SPEC.md               what gets built, with the locked schemas
 AGENTS.md             shared instructions for the coding agents

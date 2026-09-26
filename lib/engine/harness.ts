@@ -292,7 +292,7 @@ export const CUSTOMERS = [
 ];
 
 export type Pick = "after_commit" | "before_commit" | "after_commit_lookup_down" | "none";
-function planFor(pick: Pick, tool: string): FaultPlanEntry[] {
+export function planFor(pick: Pick, tool: string): FaultPlanEntry[] {
   if (pick === "none") return [];
   if (pick === "before_commit") return [{ tool, call: 1, fault: "timeout_before_commit" }];
   const plan: FaultPlanEntry[] = [{ tool, call: 1, fault: "timeout_after_commit" }];

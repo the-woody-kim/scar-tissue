@@ -15,7 +15,8 @@ export interface CaseDef {
   origin: "seed" | "incident" | "transfer";
   tools: string[];
   about: string;
-  setup: { orderId: string; customerId: string; sku: string; qty: number }[];
+  // ageSeconds: how long ago the record was made (default: long ago, outside any guardrail window).
+  setup: { orderId: string; customerId: string; sku: string; qty: number; ageSeconds?: number; refunds?: { amountCents: number; reason: string; ageSeconds: number }[] }[];
   tasks: Task[];
   faults: FaultPlanEntry[];
   expect: { effects: number; accept: string[] };
@@ -39,6 +40,10 @@ export const SEED_CASES: CaseDef[] = [
   seed("refund.happy", REFUND_TOOLS, "no fault", refundSetup, [refundTask(325, "damaged")], [], 1),
   seed("refund.partial_x2", REFUND_TOOLS, "two legitimate partial refunds", refundSetup, [refundTask(150, "damaged"), refundTask(175, "missing")], [], 2),
   seed("refund.transient", REFUND_TOOLS, "times out before saving", refundSetup, [refundTask(325, "damaged")], [{ tool: "issue_refund", call: 1, fault: "timeout_before_commit" }], 1),
+  // A matching record from 10 minutes ago is a real one, not the call that just timed out: a
+  // guardrail whose window reaches back that far adopts it, and the new order or refund is never made.
+  seed("order.reorder_10min", ORDER_TOOLS, "the same order was placed 10 minutes ago; this one times out before saving", [{ orderId: "o_PRIOR", customerId: "c_eval", sku: "BAN-6", qty: 2, ageSeconds: 600 }], [orderTask], [{ tool: "create_order", call: 1, fault: "timeout_before_commit" }], 1),
+  seed("refund.repeat_10min", REFUND_TOOLS, "the same refund was issued 10 minutes ago; this one times out before saving", [{ ...refundSetup[0], refunds: [{ amountCents: 325, reason: "damaged", ageSeconds: 600 }] }], [refundTask(325, "damaged")], [{ tool: "issue_refund", call: 1, fault: "timeout_before_commit" }], 1),
 ];
 
 function seed(id: string, tools: string[], about: string, setup: CaseDef["setup"], tasks: Task[], faults: FaultPlanEntry[], effects: number): CaseDef {
@@ -77,9 +82,11 @@ export async function runCase(d: Db, policy: Policy, c: CaseDef, evalRunId: stri
   const expiresAt = new Date(Date.now() + 3600_000);
   try {
     if (c.setup.length) {
+      const ago = (s?: number) => (s === undefined ? new Date(0) : new Date(Date.now() - s * 1000));
       await d.collection("orders").insertMany(c.setup.map((o) => ({
         orderId: o.orderId, scope, runId: "setup", customerId: o.customerId, sku: o.sku, qty: o.qty,
-        amountCents: CATALOG[o.sku].cents * o.qty, refunds: [], createdAt: new Date(0), expiresAt,
+        amountCents: CATALOG[o.sku].cents * o.qty, createdAt: ago(o.ageSeconds), expiresAt,
+        refunds: (o.refunds ?? []).map((r, i) => ({ refundId: `rf_SETUP${i}`, runId: "setup", amountCents: r.amountCents, reason: r.reason, createdAt: ago(r.ageSeconds) })),
       })) as never[]);
     }
     const reports: Report[] = [];

@@ -29,10 +29,10 @@ tool and ships a fix before its first call.
 
 **In the demo (live, measured):** order #1 duplicates. "Never retry" is rejected: it fails a case
 where the timeout came *before* saving and a retry was right. A note telling the agent to check is
-rejected: it still ordered twice. "Verify before retry" goes from 2/4 to 4/4 and ships as v2;
+rejected: it still ordered twice. "Verify before retry" goes from 3/5 to 5/5 and ships as v2;
 order #2 hits the same fault and adopts the saved order. Then the agent is granted a refund tool
-it has never used. Its policy passes 7/9 before any refund runs, a "no refund retries" rule is
-rejected, and a refund guardrail ships as v4 at 9/9. The first refund times out and is adopted:
+it has never used. Its policy passes 9/11 before any refund runs, a "no refund retries" rule is
+rejected, and a refund guardrail ships as v4 at 11/11. The first refund times out and is adopted:
 one refund. Same model throughout; only the harness changed.
 
 **Benchmarked on held-out tasks:** the same executor model, run live on 11 tasks × faults it never

@@ -62,7 +62,7 @@ no similarity scores.
 
 ## 4. The page (1536 × 920)
 
-- **Header:** name · `reloaded … via change stream` · policy pill (`Policy v4 · 9/9 cases · hash`;
+- **Header:** name · `reloaded … via change stream` · policy pill (`Policy v4 · 11/11 cases · hash`;
   click → the eval run's case grid) · `LIVE` / `REPLAY` / `FIXTURE`.
 - **Beats row:** `Run order #1` · `Run order #2` · `Grant issue_refund` · `Run refund #1` (the server
   refuses a beat out of order) · the fault picker · `Run another order` · `Reset demo`.
@@ -151,20 +151,25 @@ commit · `after saving + lookup down` → the default plus 2 failing `find_orde
 | `refund.happy` | none | 1 refund, done |
 | `refund.partial_x2` | two refunds (150 damaged, 175 missing) | 2 refunds, done |
 | `refund.transient` | `issue_refund` times out before saving | 1 refund, done |
+| `order.reorder_10min` | the same order placed 10 minutes ago; `create_order` times out before saving | 1 new order, done (the old one is not this call's) |
+| `refund.repeat_10min` | the same refund issued 10 minutes ago; `issue_refund` times out before saving | 1 new refund, done |
 | `order.inc1`, `order.inc1+lookup` | incident #1's pattern (+ 2 lookups down) | 1 order, done (escalated accepted with lookups down) |
 | `refund.xfer1`, `refund.xfer1+lookup` | incident #1's pattern on `issue_refund` | 1 refund, same |
+
+The two 10-minute cases bound a guardrail's window: one that looks back that far adopts the old
+record and makes nothing.
 
 Invariants: effects equal the expected count; the report agrees with the database (`done` ⇒
 effects = expected, `failed` ⇒ 0, `escalated` ⇒ ≤ expected); the status is accepted. A policy's
 suite is the cases whose tools it has enabled.
 
-## 9. The demo (measured 2026-09-26 14:35, from reset)
+## 9. The demo (measured 2026-09-26 14:35, from reset; case counts re-measured 16:00 with the 10-minute cases)
 
 | Beat | Input | What happened |
 |---|---|---|
-| `order-1` | Ana Ruiz (`c_2041`): 2 × Oat Milk 1L (`OAT-1L`) | timeout after saving → retried → 2 orders → incident #1 · v1 2/4 · no-retry rule rejected (failed `order.transient`, 0 orders) · tool note rejected (2 orders) · verify-before-retry promoted → v2 4/4 |
+| `order-1` | Ana Ruiz (`c_2041`): 2 × Oat Milk 1L (`OAT-1L`) | timeout after saving → retried → 2 orders → incident #1 · v1 3/5 · no-retry rule rejected (failed `order.transient`, 0 orders) · tool note rejected (2 orders) · verify-before-retry promoted → v2 5/5 |
 | `order-2` | Marcus Chen (`c_3317`): 1 × Sourdough Loaf | timeout → `find_orders` found → adopted → 1 order |
-| `grant-issue_refund` | operator grants `issue_refund` → v3 | v3 7/9 · no-refund-retry rejected (failed `refund.transient`) · tool note rejected (2 refunds) · refund guardrail promoted → v4 9/9 |
+| `grant-issue_refund` | operator grants `issue_refund` → v3 | v3 9/11 · no-refund-retry rejected (failed `refund.transient`) · tool note rejected (2 refunds) · refund guardrail promoted → v4 11/11 |
 | `refund-1` | Priya Nair (`c_1180`): $3.25 on seeded order `o_4H8M` | timeout → found → adopted → 1 refund |
 | `order-n` (live only) | the next customer in `CUSTOMERS` | the picker's fault |
 

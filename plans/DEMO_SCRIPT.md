@@ -26,9 +26,9 @@ a visible "4×".
 |---|---|---|
 | 0:00–0:06 | Title over the page: **Scar Tissue — every failure, a tested upgrade** | "Agents that take actions repeat their mistakes. Scar Tissue turns each one into a tested fix." |
 | 0:06–0:14 | Click **Run order #1**. Trace: `create_order` → TIMEOUT → retried → ok. Check turns red: *2 orders — expected 1* | "The order API times out after saving. The default retry orders twice." |
-| 0:14–0:30 | (4×) Harness fills in: three candidates. **REJECTED** on the no-retry rule (fails `order.transient`), **REJECTED** on the tool note, **PROMOTED → v2** on the guardrail. Pill `v2 · 4/4`; *reloaded via change stream* | "The harness proposes three fixes. 'Never retry' fails a case where retrying is right. A note to the agent still orders twice. 'Verify before retry' passes every case, and the running agent reloads it from Atlas." |
+| 0:14–0:30 | (4×) Harness fills in: three candidates. **REJECTED** on the no-retry rule (fails `order.transient`), **REJECTED** on the tool note, **PROMOTED → v2** on the guardrail. Pill `v2 · 5/5`; *reloaded via change stream* | "The harness proposes three fixes. 'Never retry' fails a case where retrying is right. A note to the agent still orders twice. 'Verify before retry' passes every case, and the running agent reloads it from Atlas." |
 | 0:30–0:35 | Click **Run order #2**. Trace: TIMEOUT → `find_orders` found → *adopted*. Check green: 1 | "Same fault, next customer: one order." |
-| 0:35–0:47 | Click **Grant issue_refund** (4×): `v3 before · 7/9`, the scar transferred as refund tests, **PROMOTED → v4 · 9/9**. Click **Run refund #1** → adopted, one refund | "Now it gets a refund tool it has never used. It turns the order lesson into refund tests, fixes itself before the first refund, and that refund goes through once." |
+| 0:35–0:47 | Click **Grant issue_refund** (4×): `v3 before · 9/11`, the scar transferred as refund tests, **PROMOTED → v4 · 11/11**. Click **Run refund #1** → adopted, one refund | "Now it gets a refund tool it has never used. It turns the order lesson into refund tests, fixes itself before the first refund, and that refund goes through once." |
 | 0:47–0:56 | Atlas Data Explorer: the v4 document — `policy`, `hash`, `trigger`, `evalRunId`. Quick cut to `judge()` in `lib/engine/harness.ts` | "Every version is a MongoDB document with its hash, its trigger and the test run that earned it. The evaluator is code the agent can't touch." |
 | 0:56–1:00 | End card: **Scar Tissue** · github.com/the-woody-kim/scar-tissue | "Scar Tissue. Every failure, a tested upgrade." |
 
@@ -82,7 +82,7 @@ If it's asked anyway (about 20 seconds):
 > the lesson to a refund tool before its first call. A key only fixes the endpoint it's added to."
 
 Backing points:
-- **Transfer:** `issue_refund` was at 7/9 before any refund ran; v4 shipped at 9/9.
+- **Transfer:** `issue_refund` was at 9/11 before any refund ran; v4 shipped at 11/11.
 - **Not only duplicates:** the invariants caught a $20 refund on a $9.75 order. It was caught, not
   learned from — say "caught".
 - **Don't claim** the harness would pick a key-based fix: the policy format can't express one.

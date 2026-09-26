@@ -6,6 +6,7 @@ import { db } from "./db";
 import { chat, models } from "./llm";
 import { BASELINE, Change, Policy, apply, diffLines, hash } from "./policy";
 import { CATALOG, Run, execute, taskText, type FaultPlanEntry, type Report, type Task } from "./run";
+import { span } from "./trace";
 
 // ── Cases ───────────────────────────────────────────────────────────────────
 
@@ -111,7 +112,9 @@ async function suiteFor(d: Db, policy: Policy): Promise<CaseDef[]> {
   return all.filter((c) => c.tools.every((t) => policy.tools.enabled.includes(t)));
 }
 
-export async function evaluate(d: Db, policy: Policy, label: string) {
+export const evaluate = span("evaluate", evaluateSuite, (_d, policy, label) => ({ label, policyHash: hash(policy) }), (ev) => ({ pass: ev.pass, fail: ev.fail, uncertain: ev.uncertain, cases: ev.cases }));
+
+async function evaluateSuite(d: Db, policy: Policy, label: string) {
   const cases = await suiteFor(d, policy);
   const evalRunId = `e_${Date.now().toString(36).slice(-4)}${Math.floor(Math.random() * 36).toString(36)}`;
   const limit = Number(process.env.EVAL_CONCURRENCY || 4);
@@ -141,7 +144,9 @@ const DSL = `A policy has four sections. A candidate is exactly ONE change, as J
 - {"section":"context","tool":"<tool>","note":"<=200 chars, shown to the agent"}
 - {"section":"tools","tool":"issue_refund","maxPerOrder":<n>}`;
 
-async function propose(parent: Policy, brief: string, recall: string, cases: CaseDef[]) {
+const propose = span("propose", proposeCandidates, (parent, brief, recall, cases) => ({ parentHash: hash(parent), brief, recall, cases: cases.map((c) => c._id) }), (out) => ({ candidates: out }));
+
+async function proposeCandidates(parent: Policy, brief: string, recall: string, cases: CaseDef[]) {
   const prompt = [
     "You improve the harness around an LLM agent that takes actions on a store's orders. You may only propose typed policy changes.",
     DSL,
@@ -183,7 +188,9 @@ interface LearnInput {
   query: { label: string; text: string; title: string };
 }
 
-async function learn(d: Db, input: LearnInput) {
+const learn = span("learn", learnFrom, (_d, input) => ({ kind: input.kind, parent: `v${input.parent.version}`, triggers: input.triggerIncidentIds, newCases: input.newCases.map((c) => c._id) }));
+
+async function learnFrom(d: Db, input: LearnInput) {
   const { parent } = input;
   await d.collection("eval_cases").insertMany(input.newCases.map((c, i) => ({ ...c, order: Date.now() + i })) as never[]);
   const suite = await suiteFor(d, parent.policy);
@@ -307,7 +314,9 @@ export async function activePolicy(d: Db): Promise<{ version: number; policy: Po
   return { version: p.version, policy: Policy.parse(p.policy) };
 }
 
-export async function runBeat(beat: string, pick?: Pick) {
+export const runBeat = span("beat", playBeat, (beat, pick) => ({ beat, pick: pick ?? "after_commit" }));
+
+async function playBeat(beat: string, pick?: Pick) {
   const d = await db();
   void (await import("./state")).watchActiveConfig();
   if (beat === "grant-issue_refund") return grant(d);
@@ -371,7 +380,9 @@ async function onIncident(d: Db, runId: string, task: Task, steps: StepView[], p
   });
 }
 
-async function grant(d: Db) {
+const grant = span("grant issue_refund", grantRefund, () => ({ tool: "issue_refund" }));
+
+async function grantRefund(d: Db) {
   const { version, policy } = await activePolicy(d);
   const v3: Policy = { ...structuredClone(policy), tools: { ...policy.tools, enabled: [...policy.tools.enabled, "issue_refund"] } };
   const granted = version + 1;

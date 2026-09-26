@@ -1,4 +1,6 @@
 import OpenAI from "openai";
+import { wrapOpenAI } from "langsmith/wrappers";
+import { tracer } from "./trace";
 
 // OpenRouter through the openai SDK. The provider and model stay fixed for a whole run.
 let client: OpenAI | null = null;
@@ -6,7 +8,8 @@ let client: OpenAI | null = null;
 export function llm(): OpenAI {
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) throw new Error("Set OPENROUTER_API_KEY in .env.local");
-  client ??= new OpenAI({ apiKey, baseURL: "https://openrouter.ai/api/v1", timeout: 60_000, maxRetries: 1 });
+  // wrapOpenAI logs each call to LangSmith when tracing is on, and passes straight through when it is off.
+  client ??= wrapOpenAI(new OpenAI({ apiKey, baseURL: "https://openrouter.ai/api/v1", timeout: 60_000, maxRetries: 1 }), { client: tracer });
   return client;
 }
 

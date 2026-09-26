@@ -2,7 +2,8 @@ import type { Db } from "mongodb";
 import type OpenAI from "openai";
 import type { Fault, StepView } from "@/lib/state";
 import { chat, models } from "./llm";
-import { ruleFor, type Guardrail, type Policy } from "./policy";
+import { hash, ruleFor, type Guardrail, type Policy } from "./policy";
+import { span } from "./trace";
 
 // ── Store data ──────────────────────────────────────────────────────────────
 
@@ -290,6 +291,11 @@ export interface Report {
 
 export async function execute(run: Run, policy: Policy, task: Task): Promise<Report> {
   if (run.scripted) return executeScripted(run, task);
+  return executeModel(run, policy, task);
+}
+
+// The model's tool loop, traced as one "agent" span with each model call under it.
+const executeModel = span("agent", async (run: Run, policy: Policy, task: Task): Promise<Report> => {
   const notes = Object.entries(policy.context.toolNotes).map(([t, n]) => `- ${t}: ${n}`);
   const system = [
     "You are the order agent for Northside Grocer. Complete the task with the tools, then call report exactly once:",
@@ -326,7 +332,7 @@ export async function execute(run: Run, policy: Policy, task: Task): Promise<Rep
     }
   }
   return { status: null, summary: "" };
-}
+}, (_run, policy, task) => ({ task: taskText(task), policyHash: hash(policy) }), (r) => ({ ...r }));
 
 // The agent's plan for a task, without the model: one mutating call, then an honest report.
 async function executeScripted(run: Run, task: Task): Promise<Report> {

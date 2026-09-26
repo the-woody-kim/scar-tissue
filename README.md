@@ -122,9 +122,10 @@ plans/                demo script, submission draft, screen mockups
 
 ## How it was built
 
-Two coding agents, one repo, a clear split: Codex builds the engine (`lib/`, `app/api/`, scripts,
-seeds, Atlas); Claude Code on Opus 5.5 builds the page and owns the design. They meet at a typed
-contract, `lib/state.ts`. The plan was written the night before. Before hacking began at 10:30,
+Claude Code on Opus 5.5 built all of it: the engine (`lib/`, `app/api/`, scripts, seeds, Atlas),
+the page and the docs. The engine and the page meet at a typed contract, `lib/state.ts`. Codex
+worked on a different scenario earlier in the day; that work was set aside and is not in this repo.
+The plan was written the night before. Before hacking began at 10:30,
 the repo held the plan, screen mockups, the Next.js scaffold and a static mock of the page against
 fixture JSON (`c362973`, `a0f45b1`, 09:38). Everything that runs was built after 10:30.
 

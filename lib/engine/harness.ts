@@ -408,7 +408,7 @@ const SEED_INCIDENTS = [
 export async function reset() {
   const d = await db();
   await d.collection("active_config").deleteMany({});
-  for (const c of ["orders", "runs", "incidents", "policies", "eval_cases", "eval_runs", "learning", "rituals"]) {
+  for (const c of ["orders", "runs", "incidents", "policies", "eval_cases", "eval_runs", "learning"]) {
     await d.collection(c).drop().catch(() => {});
   }
   await d.collection("orders").createIndex({ scope: 1, customerId: 1, createdAt: -1 });

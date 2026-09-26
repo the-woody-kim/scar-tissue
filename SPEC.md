@@ -41,9 +41,9 @@ An LLM agent runs Northside Grocer's orders (fictional) in MongoDB Atlas. After 
 
 Steps 2–8 run with no human input.
 
-**Prior art.** RRSI (arXiv 2609.24972) shows recursive harness edits overfit to the tasks that
-caused them unless regularized — an edit budget, a leakage screen, a no-regression floor. Here:
-one change per candidate, the leakage screen, every case must pass, and transfer before first use.
+**Overfitting guards.** A harness that edits itself can overfit to the incident that caused the
+edit. Here: one change per candidate, the leakage screen, every case must pass, and transfer before
+first use.
 
 ## 3. Where MongoDB does the work
 

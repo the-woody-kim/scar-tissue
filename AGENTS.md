@@ -87,4 +87,4 @@ instead of editing files.
 - [ ] fault picker: under v2, every option ends with one order (live demo, not the video)
 - [x] public repo
 - [x] description
-- [ ] 1-minute video with working audio
+- [x] 1-minute video with working audio

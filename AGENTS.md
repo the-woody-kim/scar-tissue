@@ -85,4 +85,6 @@ instead of editing files.
 - [x] refund-1: same fault, one refund
 - [x] the change-stream reload is visible in the header
 - [ ] fault picker: under v2, every option ends with one order (live demo, not the video)
-- [ ] public repo · 1-minute video with working audio · description
+- [x] public repo
+- [x] description
+- [ ] 1-minute video with working audio

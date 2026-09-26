@@ -1,0 +1,387 @@
+{
+  "mode": "live",
+  "store": {
+    "name": "Northside Grocer",
+    "agent": "order agent"
+  },
+  "running": null,
+  "policy": {
+    "version": 4,
+    "hash": "c81d77",
+    "pass": 9,
+    "total": 9,
+    "evalRunId": "e_0431",
+    "cases": [
+      {
+        "id": "order.happy",
+        "outcome": "pass",
+        "origin": "seed",
+        "about": "no fault",
+        "result": "1 order · done"
+      },
+      {
+        "id": "order.transient",
+        "outcome": "pass",
+        "origin": "seed",
+        "about": "times out before saving",
+        "result": "retried · 1 order · done"
+      },
+      {
+        "id": "order.inc1",
+        "outcome": "pass",
+        "origin": "incident",
+        "about": "times out after saving",
+        "result": "found and adopted · 1 order · done"
+      },
+      {
+        "id": "order.inc1+lookup",
+        "outcome": "pass",
+        "origin": "incident",
+        "about": "after saving, then 2 lookups fail",
+        "result": "rechecked, adopted · 1 order · done"
+      },
+      {
+        "id": "refund.happy",
+        "outcome": "pass",
+        "origin": "seed",
+        "about": "no fault",
+        "result": "1 refund · done"
+      },
+      {
+        "id": "refund.partial_x2",
+        "outcome": "pass",
+        "origin": "seed",
+        "about": "two legitimate partial refunds",
+        "result": "2 refunds · done"
+      },
+      {
+        "id": "refund.transient",
+        "outcome": "pass",
+        "origin": "seed",
+        "about": "times out before saving",
+        "result": "retried · 1 refund · done"
+      },
+      {
+        "id": "refund.xfer1",
+        "outcome": "pass",
+        "origin": "transfer",
+        "about": "incident #1's pattern on issue_refund",
+        "result": "found and adopted · 1 refund · done"
+      },
+      {
+        "id": "refund.xfer1+lookup",
+        "outcome": "pass",
+        "origin": "transfer",
+        "about": "the same, with 2 lookups failing",
+        "result": "rechecked, adopted · 1 refund · done"
+      }
+    ]
+  },
+  "reload": {
+    "at": "14:06:41",
+    "via": "change stream"
+  },
+  "beats": [
+    {
+      "id": "order-1",
+      "label": "Run order #1",
+      "status": "done"
+    },
+    {
+      "id": "order-2",
+      "label": "Run order #2",
+      "status": "done"
+    },
+    {
+      "id": "grant-issue_refund",
+      "label": "Grant issue_refund",
+      "status": "done"
+    },
+    {
+      "id": "refund-1",
+      "label": "Run refund #1",
+      "status": "next"
+    }
+  ],
+  "run": {
+    "title": "Order #2",
+    "policy": {
+      "version": 2,
+      "hash": "9f2c1a"
+    },
+    "startedAt": "14:03:18",
+    "task": {
+      "kind": "place_order",
+      "customer": {
+        "id": "c_3317",
+        "name": "Marcus Chen"
+      },
+      "detail": "1 × Sourdough Loaf (SRD-800) at $6.50."
+    },
+    "picked": null,
+    "steps": [
+      {
+        "actor": "llm",
+        "tool": "create_order",
+        "args": [
+          "c_3317",
+          "SRD-800",
+          1
+        ],
+        "result": {
+          "kind": "timeout"
+        },
+        "ms": 1506,
+        "fault": "timeout_after_commit"
+      },
+      {
+        "actor": "harness",
+        "tool": "find_orders",
+        "args": [
+          "c_3317"
+        ],
+        "result": {
+          "kind": "found",
+          "ref": "o_9M3P"
+        },
+        "clause": "guardrails[0]",
+        "action": "verify",
+        "ms": 181
+      },
+      {
+        "actor": "harness",
+        "tool": "create_order",
+        "args": [],
+        "note": "not retried",
+        "result": {
+          "kind": "adopted",
+          "ref": "o_9M3P"
+        },
+        "clause": "guardrails[0]",
+        "action": "adopt"
+      },
+      {
+        "actor": "llm",
+        "tool": "report",
+        "args": [],
+        "note": "done",
+        "quote": "Order placed for Marcus — 1 × Sourdough Loaf."
+      }
+    ],
+    "check": {
+      "noun": "order",
+      "effects": 1,
+      "expected": 1,
+      "scope": "live",
+      "report": {
+        "status": "done",
+        "agrees": true
+      },
+      "ok": true
+    }
+  },
+  "harness": {
+    "kind": "grant",
+    "tool": "issue_refund",
+    "toVersion": 3,
+    "before": {
+      "version": 3,
+      "pass": 7,
+      "total": 9
+    },
+    "candidates": [
+      {
+        "letter": "A",
+        "name": "One refund per order",
+        "section": "tools",
+        "status": "rejected",
+        "diff": [
+          "+ tools.limits.issue_refund  { maxPerOrder: 1 }"
+        ],
+        "cases": [
+          {
+            "id": "order.happy",
+            "outcome": "pass"
+          },
+          {
+            "id": "order.transient",
+            "outcome": "pass"
+          },
+          {
+            "id": "order.inc1",
+            "outcome": "pass"
+          },
+          {
+            "id": "order.inc1+lookup",
+            "outcome": "pass"
+          },
+          {
+            "id": "refund.happy",
+            "outcome": "pass"
+          },
+          {
+            "id": "refund.partial_x2",
+            "outcome": "fail"
+          },
+          {
+            "id": "refund.transient",
+            "outcome": "pass"
+          },
+          {
+            "id": "refund.xfer1",
+            "outcome": "fail"
+          },
+          {
+            "id": "refund.xfer1+lookup",
+            "outcome": "fail"
+          }
+        ],
+        "failed": {
+          "caseId": "refund.partial_x2",
+          "detail": "blocked a second, legitimate refund."
+        }
+      },
+      {
+        "letter": "B",
+        "name": "Check before retrying refunds",
+        "section": "guardrails",
+        "status": "promoted",
+        "promotedTo": 4,
+        "diff": [
+          "+ guardrails[1]  verify_before_retry  issue_refund",
+          "+   lookup  find_orders(orderId) → orders.*.refunds",
+          "+   match   amountCents, reason · within 120 s",
+          "+   found → adopt · lookup error → recheck ×2, then halt"
+        ],
+        "highlights": [
+          "orders.*.refunds",
+          "amountCents, reason"
+        ],
+        "cases": [
+          {
+            "id": "order.happy",
+            "outcome": "pass"
+          },
+          {
+            "id": "order.transient",
+            "outcome": "pass"
+          },
+          {
+            "id": "order.inc1",
+            "outcome": "pass"
+          },
+          {
+            "id": "order.inc1+lookup",
+            "outcome": "pass"
+          },
+          {
+            "id": "refund.happy",
+            "outcome": "pass"
+          },
+          {
+            "id": "refund.partial_x2",
+            "outcome": "pass"
+          },
+          {
+            "id": "refund.transient",
+            "outcome": "pass"
+          },
+          {
+            "id": "refund.xfer1",
+            "outcome": "pass"
+          },
+          {
+            "id": "refund.xfer1+lookup",
+            "outcome": "pass"
+          }
+        ]
+      }
+    ]
+  },
+  "memory": {
+    "kind": "recall",
+    "title": "Recall for issue_refund",
+    "index": "incidents_vec",
+    "of": 7,
+    "query": {
+      "label": "The new tool",
+      "text": "issue_refund — mutating; adds a refund to an order; can time out; takes no idempotency key."
+    },
+    "hits": [
+      {
+        "score": 0.91,
+        "origin": "live",
+        "tool": "create_order",
+        "incident": 1,
+        "summary": "Timed out after the order was saved; the retry placed it again.",
+        "attempts": [
+          {
+            "name": "Check before retrying",
+            "version": 2,
+            "status": "promoted",
+            "detail": "4/4"
+          },
+          {
+            "name": "Never retry",
+            "status": "rejected",
+            "detail": "failed order.transient"
+          },
+          {
+            "name": "Don't retry c_2041",
+            "status": "screened",
+            "detail": "named the incident"
+          }
+        ]
+      },
+      {
+        "score": 0.84,
+        "origin": "seed",
+        "tool": "send_receipt_email",
+        "summary": "Timed out after sending; the retry sent a second receipt.",
+        "attempts": []
+      },
+      {
+        "score": 0.66,
+        "origin": "seed",
+        "tool": "reserve_inventory",
+        "summary": "Read a stale replica and reserved the stock twice.",
+        "attempts": []
+      }
+    ],
+    "transferred": {
+      "incident": 1,
+      "tool": "issue_refund",
+      "cases": [
+        "refund.xfer1",
+        "refund.xfer1+lookup"
+      ],
+      "note": "The same fault pattern, mapped onto the new tool. Both failed on v3 — before any refund had run."
+    }
+  },
+  "versions": [
+    {
+      "version": 1,
+      "hash": "3b7e04",
+      "origin": "baseline"
+    },
+    {
+      "version": 2,
+      "hash": "9f2c1a",
+      "origin": "learned",
+      "incident": 1,
+      "evalRunId": "e_0412"
+    },
+    {
+      "version": 3,
+      "hash": "5d0e93",
+      "origin": "granted"
+    },
+    {
+      "version": 4,
+      "hash": "c81d77",
+      "origin": "transfer",
+      "incident": 1,
+      "evalRunId": "e_0431"
+    }
+  ]
+}

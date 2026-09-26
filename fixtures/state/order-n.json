@@ -1,0 +1,368 @@
+{
+  "mode": "live",
+  "store": {
+    "name": "Northside Grocer",
+    "agent": "order agent"
+  },
+  "running": null,
+  "policy": {
+    "version": 4,
+    "hash": "c81d77",
+    "pass": 9,
+    "total": 9,
+    "evalRunId": "e_0431",
+    "cases": [
+      {
+        "id": "order.happy",
+        "outcome": "pass",
+        "origin": "seed",
+        "about": "no fault",
+        "result": "1 order · done"
+      },
+      {
+        "id": "order.transient",
+        "outcome": "pass",
+        "origin": "seed",
+        "about": "times out before saving",
+        "result": "retried · 1 order · done"
+      },
+      {
+        "id": "order.inc1",
+        "outcome": "pass",
+        "origin": "incident",
+        "about": "times out after saving",
+        "result": "found and adopted · 1 order · done"
+      },
+      {
+        "id": "order.inc1+lookup",
+        "outcome": "pass",
+        "origin": "incident",
+        "about": "after saving, then 2 lookups fail",
+        "result": "rechecked, adopted · 1 order · done"
+      },
+      {
+        "id": "refund.happy",
+        "outcome": "pass",
+        "origin": "seed",
+        "about": "no fault",
+        "result": "1 refund · done"
+      },
+      {
+        "id": "refund.partial_x2",
+        "outcome": "pass",
+        "origin": "seed",
+        "about": "two legitimate partial refunds",
+        "result": "2 refunds · done"
+      },
+      {
+        "id": "refund.transient",
+        "outcome": "pass",
+        "origin": "seed",
+        "about": "times out before saving",
+        "result": "retried · 1 refund · done"
+      },
+      {
+        "id": "refund.xfer1",
+        "outcome": "pass",
+        "origin": "transfer",
+        "about": "incident #1's pattern on issue_refund",
+        "result": "found and adopted · 1 refund · done"
+      },
+      {
+        "id": "refund.xfer1+lookup",
+        "outcome": "pass",
+        "origin": "transfer",
+        "about": "the same, with 2 lookups failing",
+        "result": "rechecked, adopted · 1 refund · done"
+      }
+    ]
+  },
+  "reload": {
+    "at": "14:06:41",
+    "via": "change stream"
+  },
+  "beats": [
+    {
+      "id": "order-1",
+      "label": "Run order #1",
+      "status": "done"
+    },
+    {
+      "id": "order-2",
+      "label": "Run order #2",
+      "status": "done"
+    },
+    {
+      "id": "grant-issue_refund",
+      "label": "Grant issue_refund",
+      "status": "done"
+    },
+    {
+      "id": "refund-1",
+      "label": "Run refund #1",
+      "status": "done"
+    }
+  ],
+  "run": {
+    "title": "Order #3",
+    "policy": {
+      "version": 4,
+      "hash": "c81d77"
+    },
+    "startedAt": "14:09:42",
+    "task": {
+      "kind": "place_order",
+      "customer": {
+        "id": "c_4410",
+        "name": "Dana Okafor"
+      },
+      "detail": "3 × Free-range Eggs 12 (EGG-12) at $5.20."
+    },
+    "picked": "after_commit_lookup_down",
+    "steps": [
+      {
+        "actor": "llm",
+        "tool": "create_order",
+        "args": [
+          "c_4410",
+          "EGG-12",
+          3
+        ],
+        "result": {
+          "kind": "timeout"
+        },
+        "ms": 1503,
+        "fault": "timeout_after_commit"
+      },
+      {
+        "actor": "harness",
+        "tool": "find_orders",
+        "args": [
+          "c_4410"
+        ],
+        "result": {
+          "kind": "lookup_error"
+        },
+        "clause": "guardrails[0]",
+        "action": "verify",
+        "fault": "lookup_error"
+      },
+      {
+        "actor": "harness",
+        "tool": "find_orders",
+        "args": [
+          "c_4410"
+        ],
+        "result": {
+          "kind": "lookup_error"
+        },
+        "action": "recheck",
+        "recheck": {
+          "n": 1,
+          "of": 2
+        },
+        "fault": "lookup_error"
+      },
+      {
+        "actor": "harness",
+        "tool": "find_orders",
+        "args": [
+          "c_4410"
+        ],
+        "result": {
+          "kind": "found",
+          "ref": "o_2K7D"
+        },
+        "action": "recheck",
+        "recheck": {
+          "n": 2,
+          "of": 2
+        },
+        "ms": 179
+      },
+      {
+        "actor": "harness",
+        "tool": "create_order",
+        "args": [],
+        "note": "not retried",
+        "result": {
+          "kind": "adopted",
+          "ref": "o_2K7D"
+        },
+        "clause": "guardrails[0]",
+        "action": "adopt"
+      },
+      {
+        "actor": "llm",
+        "tool": "report",
+        "args": [],
+        "note": "done",
+        "quote": "Order placed for Dana — 3 × Free-range Eggs."
+      }
+    ],
+    "check": {
+      "noun": "order",
+      "effects": 1,
+      "expected": 1,
+      "scope": "live",
+      "report": {
+        "status": "done",
+        "agrees": true
+      },
+      "ok": true
+    }
+  },
+  "harness": {
+    "kind": "clean",
+    "pick": {
+      "pick": "after_commit_lookup_down",
+      "caseId": "order.inc1+lookup",
+      "note": "Derived from incident #1 and passed by every version since v2. The live run took the path the test did: two failed lookups, a recheck, then the saved order adopted."
+    },
+    "active": {
+      "version": 4,
+      "section": "guardrails",
+      "evalRunId": "e_0431",
+      "diff": [
+        "guardrails[0]  verify_before_retry  create_order",
+        "  lookup  find_orders(customerId) → orders",
+        "  match   sku, qty · within 120 s",
+        "  found → adopt · lookup error → recheck ×2, then halt"
+      ],
+      "highlights": [
+        "recheck ×2, then halt"
+      ],
+      "cases": [
+        {
+          "id": "order.happy",
+          "outcome": "pass"
+        },
+        {
+          "id": "order.transient",
+          "outcome": "pass"
+        },
+        {
+          "id": "order.inc1",
+          "outcome": "pass"
+        },
+        {
+          "id": "order.inc1+lookup",
+          "outcome": "pass",
+          "lit": true
+        },
+        {
+          "id": "refund.happy",
+          "outcome": "pass"
+        },
+        {
+          "id": "refund.partial_x2",
+          "outcome": "pass"
+        },
+        {
+          "id": "refund.transient",
+          "outcome": "pass"
+        },
+        {
+          "id": "refund.xfer1",
+          "outcome": "pass"
+        },
+        {
+          "id": "refund.xfer1+lookup",
+          "outcome": "pass"
+        }
+      ],
+      "note": "The underlined clause is the one that acted on this run."
+    }
+  },
+  "memory": {
+    "kind": "stored",
+    "counts": {
+      "live": 1,
+      "seed": 6
+    },
+    "note": "No recall this run — the check passed, so nothing new was stored.",
+    "live": [
+      {
+        "origin": "live",
+        "tool": "create_order",
+        "incident": 1,
+        "summary": "Timed out after the order was saved; the retry placed it again.",
+        "attempts": [
+          {
+            "name": "Check before retrying",
+            "version": 2,
+            "status": "promoted",
+            "detail": "4/4"
+          },
+          {
+            "name": "Never retry",
+            "status": "rejected",
+            "detail": "failed order.transient"
+          },
+          {
+            "name": "Don't retry c_2041",
+            "status": "screened",
+            "detail": "named the incident"
+          }
+        ],
+        "carried": {
+          "tool": "issue_refund",
+          "caseId": "refund.xfer1",
+          "version": 4
+        }
+      }
+    ],
+    "seed": [
+      {
+        "tool": "send_receipt_email",
+        "summary": "Timed out after sending; the retry sent a second receipt."
+      },
+      {
+        "tool": "reserve_inventory",
+        "summary": "Read a stale replica and reserved the stock twice."
+      },
+      {
+        "tool": "get_delivery_slots",
+        "summary": "Returned an empty list during an outage, read as “no slots”."
+      },
+      {
+        "tool": "charge_card",
+        "summary": "Hit a rate limit; five fast retries locked the account."
+      },
+      {
+        "tool": "lookup_customer",
+        "summary": "Matched two “J. Smith” records and picked the first."
+      },
+      {
+        "tool": "update_address",
+        "summary": "A renamed field was written as null."
+      }
+    ]
+  },
+  "versions": [
+    {
+      "version": 1,
+      "hash": "3b7e04",
+      "origin": "baseline"
+    },
+    {
+      "version": 2,
+      "hash": "9f2c1a",
+      "origin": "learned",
+      "incident": 1,
+      "evalRunId": "e_0412"
+    },
+    {
+      "version": 3,
+      "hash": "5d0e93",
+      "origin": "granted"
+    },
+    {
+      "version": 4,
+      "hash": "c81d77",
+      "origin": "transfer",
+      "incident": 1,
+      "evalRunId": "e_0431"
+    }
+  ]
+}

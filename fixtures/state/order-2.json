@@ -1,0 +1,275 @@
+{
+  "mode": "live",
+  "store": {
+    "name": "Northside Grocer",
+    "agent": "order agent"
+  },
+  "running": null,
+  "policy": {
+    "version": 2,
+    "hash": "9f2c1a",
+    "pass": 4,
+    "total": 4,
+    "evalRunId": "e_0412",
+    "cases": [
+      {
+        "id": "order.happy",
+        "outcome": "pass",
+        "origin": "seed",
+        "about": "no fault",
+        "result": "1 order · done"
+      },
+      {
+        "id": "order.transient",
+        "outcome": "pass",
+        "origin": "seed",
+        "about": "times out before saving",
+        "result": "retried · 1 order · done"
+      },
+      {
+        "id": "order.inc1",
+        "outcome": "pass",
+        "origin": "incident",
+        "about": "times out after saving",
+        "result": "found and adopted · 1 order · done"
+      },
+      {
+        "id": "order.inc1+lookup",
+        "outcome": "pass",
+        "origin": "incident",
+        "about": "after saving, then 2 lookups fail",
+        "result": "rechecked, adopted · 1 order · done"
+      }
+    ]
+  },
+  "reload": {
+    "at": "14:02:07",
+    "via": "change stream"
+  },
+  "beats": [
+    {
+      "id": "order-1",
+      "label": "Run order #1",
+      "status": "done"
+    },
+    {
+      "id": "order-2",
+      "label": "Run order #2",
+      "status": "done"
+    },
+    {
+      "id": "grant-issue_refund",
+      "label": "Grant issue_refund",
+      "status": "next"
+    },
+    {
+      "id": "refund-1",
+      "label": "Run refund #1",
+      "status": "todo"
+    }
+  ],
+  "run": {
+    "title": "Order #2",
+    "policy": {
+      "version": 2,
+      "hash": "9f2c1a"
+    },
+    "startedAt": "14:03:18",
+    "task": {
+      "kind": "place_order",
+      "customer": {
+        "id": "c_3317",
+        "name": "Marcus Chen"
+      },
+      "detail": "1 × Sourdough Loaf (SRD-800) at $6.50."
+    },
+    "picked": null,
+    "steps": [
+      {
+        "actor": "llm",
+        "tool": "create_order",
+        "args": [
+          "c_3317",
+          "SRD-800",
+          1
+        ],
+        "result": {
+          "kind": "timeout"
+        },
+        "ms": 1506,
+        "fault": "timeout_after_commit"
+      },
+      {
+        "actor": "harness",
+        "tool": "find_orders",
+        "args": [
+          "c_3317"
+        ],
+        "result": {
+          "kind": "found",
+          "ref": "o_9M3P"
+        },
+        "clause": "guardrails[0]",
+        "action": "verify",
+        "ms": 181
+      },
+      {
+        "actor": "harness",
+        "tool": "create_order",
+        "args": [],
+        "note": "not retried",
+        "result": {
+          "kind": "adopted",
+          "ref": "o_9M3P"
+        },
+        "clause": "guardrails[0]",
+        "action": "adopt"
+      },
+      {
+        "actor": "llm",
+        "tool": "report",
+        "args": [],
+        "note": "done",
+        "quote": "Order placed for Marcus — 1 × Sourdough Loaf."
+      }
+    ],
+    "check": {
+      "noun": "order",
+      "effects": 1,
+      "expected": 1,
+      "scope": "live",
+      "report": {
+        "status": "done",
+        "agrees": true
+      },
+      "ok": true
+    }
+  },
+  "harness": {
+    "kind": "clean",
+    "compare": {
+      "before": {
+        "label": "order #1",
+        "version": 1,
+        "hash": "3b7e04",
+        "effects": 2,
+        "noun": "order",
+        "ok": false,
+        "note": "Retried without checking."
+      },
+      "after": {
+        "label": "order #2",
+        "version": 2,
+        "hash": "9f2c1a",
+        "effects": 1,
+        "noun": "order",
+        "ok": true,
+        "note": "Checked first, found it, adopted it."
+      }
+    },
+    "active": {
+      "version": 2,
+      "section": "guardrails",
+      "evalRunId": "e_0412",
+      "diff": [
+        "guardrails[0]  verify_before_retry  create_order",
+        "  lookup  find_orders(customerId) → orders",
+        "  match   sku, qty · within 120 s",
+        "  found → adopt · lookup error → recheck ×2, then halt"
+      ],
+      "cases": [
+        {
+          "id": "order.happy",
+          "outcome": "pass"
+        },
+        {
+          "id": "order.transient",
+          "outcome": "pass"
+        },
+        {
+          "id": "order.inc1",
+          "outcome": "pass"
+        },
+        {
+          "id": "order.inc1+lookup",
+          "outcome": "pass"
+        }
+      ],
+      "note": "Fired once, on order #2: found o_9M3P and adopted it instead of placing it again."
+    }
+  },
+  "memory": {
+    "kind": "stored",
+    "counts": {
+      "live": 1,
+      "seed": 6
+    },
+    "note": "No recall this run — the check passed, so nothing new was stored.",
+    "live": [
+      {
+        "origin": "live",
+        "tool": "create_order",
+        "incident": 1,
+        "summary": "Timed out after the order was saved; the retry placed it again.",
+        "attempts": [
+          {
+            "name": "Check before retrying",
+            "version": 2,
+            "status": "promoted",
+            "detail": "4/4"
+          },
+          {
+            "name": "Never retry",
+            "status": "rejected",
+            "detail": "failed order.transient"
+          },
+          {
+            "name": "Don't retry c_2041",
+            "status": "screened",
+            "detail": "named the incident"
+          }
+        ]
+      }
+    ],
+    "seed": [
+      {
+        "tool": "send_receipt_email",
+        "summary": "Timed out after sending; the retry sent a second receipt."
+      },
+      {
+        "tool": "reserve_inventory",
+        "summary": "Read a stale replica and reserved the stock twice."
+      },
+      {
+        "tool": "get_delivery_slots",
+        "summary": "Returned an empty list during an outage, read as “no slots”."
+      },
+      {
+        "tool": "charge_card",
+        "summary": "Hit a rate limit; five fast retries locked the account."
+      },
+      {
+        "tool": "lookup_customer",
+        "summary": "Matched two “J. Smith” records and picked the first."
+      },
+      {
+        "tool": "update_address",
+        "summary": "A renamed field was written as null."
+      }
+    ]
+  },
+  "versions": [
+    {
+      "version": 1,
+      "hash": "3b7e04",
+      "origin": "baseline"
+    },
+    {
+      "version": 2,
+      "hash": "9f2c1a",
+      "origin": "learned",
+      "incident": 1,
+      "evalRunId": "e_0412"
+    }
+  ]
+}

@@ -1,0 +1,100 @@
+{
+  "mode": "live",
+  "store": {
+    "name": "Northside Grocer",
+    "agent": "order agent"
+  },
+  "running": null,
+  "policy": {
+    "version": 1,
+    "hash": "3b7e04",
+    "pass": 2,
+    "total": 2,
+    "evalRunId": null,
+    "cases": [
+      {
+        "id": "order.happy",
+        "outcome": "pass",
+        "origin": "seed",
+        "about": "no fault",
+        "result": "1 order · done"
+      },
+      {
+        "id": "order.transient",
+        "outcome": "pass",
+        "origin": "seed",
+        "about": "times out before saving",
+        "result": "retried · 1 order · done"
+      }
+    ]
+  },
+  "reload": null,
+  "beats": [
+    {
+      "id": "order-1",
+      "label": "Run order #1",
+      "status": "next"
+    },
+    {
+      "id": "order-2",
+      "label": "Run order #2",
+      "status": "todo"
+    },
+    {
+      "id": "grant-issue_refund",
+      "label": "Grant issue_refund",
+      "status": "todo"
+    },
+    {
+      "id": "refund-1",
+      "label": "Run refund #1",
+      "status": "todo"
+    }
+  ],
+  "run": null,
+  "harness": {
+    "kind": "idle"
+  },
+  "memory": {
+    "kind": "stored",
+    "counts": {
+      "live": 0,
+      "seed": 6
+    },
+    "note": null,
+    "live": [],
+    "seed": [
+      {
+        "tool": "send_receipt_email",
+        "summary": "Timed out after sending; the retry sent a second receipt."
+      },
+      {
+        "tool": "reserve_inventory",
+        "summary": "Read a stale replica and reserved the stock twice."
+      },
+      {
+        "tool": "get_delivery_slots",
+        "summary": "Returned an empty list during an outage, read as “no slots”."
+      },
+      {
+        "tool": "charge_card",
+        "summary": "Hit a rate limit; five fast retries locked the account."
+      },
+      {
+        "tool": "lookup_customer",
+        "summary": "Matched two “J. Smith” records and picked the first."
+      },
+      {
+        "tool": "update_address",
+        "summary": "A renamed field was written as null."
+      }
+    ]
+  },
+  "versions": [
+    {
+      "version": 1,
+      "hash": "3b7e04",
+      "origin": "baseline"
+    }
+  ]
+}

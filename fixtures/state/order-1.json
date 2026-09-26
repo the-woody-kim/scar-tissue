@@ -1,0 +1,279 @@
+{
+  "mode": "live",
+  "store": {
+    "name": "Northside Grocer",
+    "agent": "order agent"
+  },
+  "running": null,
+  "policy": {
+    "version": 2,
+    "hash": "9f2c1a",
+    "pass": 4,
+    "total": 4,
+    "evalRunId": "e_0412",
+    "cases": [
+      {
+        "id": "order.happy",
+        "outcome": "pass",
+        "origin": "seed",
+        "about": "no fault",
+        "result": "1 order · done"
+      },
+      {
+        "id": "order.transient",
+        "outcome": "pass",
+        "origin": "seed",
+        "about": "times out before saving",
+        "result": "retried · 1 order · done"
+      },
+      {
+        "id": "order.inc1",
+        "outcome": "pass",
+        "origin": "incident",
+        "about": "times out after saving",
+        "result": "found and adopted · 1 order · done"
+      },
+      {
+        "id": "order.inc1+lookup",
+        "outcome": "pass",
+        "origin": "incident",
+        "about": "after saving, then 2 lookups fail",
+        "result": "rechecked, adopted · 1 order · done"
+      }
+    ]
+  },
+  "reload": {
+    "at": "14:02:07",
+    "via": "change stream"
+  },
+  "beats": [
+    {
+      "id": "order-1",
+      "label": "Run order #1",
+      "status": "done"
+    },
+    {
+      "id": "order-2",
+      "label": "Run order #2",
+      "status": "next"
+    },
+    {
+      "id": "grant-issue_refund",
+      "label": "Grant issue_refund",
+      "status": "todo"
+    },
+    {
+      "id": "refund-1",
+      "label": "Run refund #1",
+      "status": "todo"
+    }
+  ],
+  "run": {
+    "title": "Order #1",
+    "policy": {
+      "version": 1,
+      "hash": "3b7e04"
+    },
+    "startedAt": "14:01:52",
+    "task": {
+      "kind": "place_order",
+      "customer": {
+        "id": "c_2041",
+        "name": "Ana Ruiz"
+      },
+      "detail": "2 × Oat Milk 1L (OAT-1L) at $4.49."
+    },
+    "picked": null,
+    "steps": [
+      {
+        "actor": "llm",
+        "tool": "create_order",
+        "args": [
+          "c_2041",
+          "OAT-1L",
+          2
+        ],
+        "result": {
+          "kind": "timeout"
+        },
+        "ms": 1504,
+        "fault": "timeout_after_commit"
+      },
+      {
+        "actor": "harness",
+        "tool": "create_order",
+        "args": [
+          "c_2041",
+          "OAT-1L",
+          2
+        ],
+        "result": {
+          "kind": "ok",
+          "ref": "o_7Q2L"
+        },
+        "clause": "rules[0]",
+        "action": "retry",
+        "ms": 318
+      },
+      {
+        "actor": "llm",
+        "tool": "report",
+        "args": [],
+        "note": "done",
+        "quote": "Order placed for Ana — 2 × Oat Milk 1L."
+      }
+    ],
+    "check": {
+      "noun": "order",
+      "effects": 2,
+      "expected": 1,
+      "scope": "live",
+      "report": {
+        "status": "done",
+        "agrees": false
+      },
+      "ok": false
+    }
+  },
+  "harness": {
+    "kind": "incident",
+    "incident": {
+      "n": 1,
+      "summary": "create_order timed out after the order was saved; the retry placed it again.",
+      "newCases": [
+        "order.inc1",
+        "order.inc1+lookup"
+      ]
+    },
+    "before": {
+      "version": 1,
+      "pass": 2,
+      "total": 4
+    },
+    "candidates": [
+      {
+        "letter": "A",
+        "name": "Never retry create_order",
+        "section": "rules",
+        "status": "rejected",
+        "diff": [
+          "+ rules[1]  no_retry  create_order · on timeout"
+        ],
+        "cases": [
+          {
+            "id": "order.happy",
+            "outcome": "pass"
+          },
+          {
+            "id": "order.transient",
+            "outcome": "fail"
+          },
+          {
+            "id": "order.inc1",
+            "outcome": "fail"
+          },
+          {
+            "id": "order.inc1+lookup",
+            "outcome": "fail"
+          }
+        ],
+        "failed": {
+          "caseId": "order.transient",
+          "detail": "0 orders; that timeout needed a retry."
+        }
+      },
+      {
+        "letter": "B",
+        "name": "Check before retrying",
+        "section": "guardrails",
+        "status": "promoted",
+        "promotedTo": 2,
+        "diff": [
+          "+ guardrails[0]  verify_before_retry  create_order",
+          "+   lookup  find_orders(customerId) → orders",
+          "+   match   sku, qty · within 120 s",
+          "+   found → adopt · lookup error → recheck ×2, then halt"
+        ],
+        "cases": [
+          {
+            "id": "order.happy",
+            "outcome": "pass"
+          },
+          {
+            "id": "order.transient",
+            "outcome": "pass"
+          },
+          {
+            "id": "order.inc1",
+            "outcome": "pass"
+          },
+          {
+            "id": "order.inc1+lookup",
+            "outcome": "pass"
+          }
+        ]
+      },
+      {
+        "letter": "C",
+        "name": "Don't retry c_2041",
+        "section": "context",
+        "status": "screened",
+        "diff": [
+          "+ context.toolNotes.create_order  \"Orders for c_2041 (OAT-1L) can time out after saving; don't retry them.\""
+        ],
+        "cases": [],
+        "screened": [
+          "c_2041",
+          "OAT-1L"
+        ]
+      }
+    ]
+  },
+  "memory": {
+    "kind": "recall",
+    "title": "Recall",
+    "index": "incidents_vec",
+    "of": 7,
+    "query": {
+      "label": "Incident #1",
+      "text": "create_order timed out after the order was saved; the retry placed it again."
+    },
+    "hits": [
+      {
+        "score": 0.87,
+        "origin": "seed",
+        "tool": "send_receipt_email",
+        "summary": "Timed out after sending; the retry sent a second receipt.",
+        "attempts": []
+      },
+      {
+        "score": 0.79,
+        "origin": "seed",
+        "tool": "reserve_inventory",
+        "summary": "Read a stale replica and reserved the stock twice.",
+        "attempts": []
+      },
+      {
+        "score": 0.58,
+        "origin": "seed",
+        "tool": "charge_card",
+        "summary": "Hit a rate limit; five fast retries locked the account.",
+        "attempts": []
+      }
+    ]
+  },
+  "versions": [
+    {
+      "version": 1,
+      "hash": "3b7e04",
+      "origin": "baseline"
+    },
+    {
+      "version": 2,
+      "hash": "9f2c1a",
+      "origin": "learned",
+      "incident": 1,
+      "evalRunId": "e_0412"
+    }
+  ]
+}

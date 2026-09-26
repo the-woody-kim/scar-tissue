@@ -35,6 +35,13 @@ it has never used. Its policy passes 7/9 before any refund runs, a "no refund re
 rejected, and a refund guardrail ships as v4 at 9/9. The first refund times out and is adopted:
 one refund. Same model throughout; only the harness changed.
 
+**Try to break it:** anyone can type their own request into the page. The agent runs it on the
+active policy, and fixed invariants judge the result: no duplicate orders or refunds, no refund
+above the order's total, and a report that matches the database. In testing, a customer talked
+the agent into a $20 refund on a $9.75 order, and the check caught it. A broken check is stored as
+an incident, but only the fault the evaluator has cases for is learned from, so a prompt can't talk
+the harness into a new rule.
+
 **Why not idempotency keys?** Use them when an API accepts them. This one doesn't, like many APIs
 an agent calls but doesn't own. The point is that the harness found the fix, tested it, and threw
 out worse ones by itself.

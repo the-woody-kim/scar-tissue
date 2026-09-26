@@ -44,6 +44,10 @@ traces, incidents, versioned and hashed policies linked to the eval runs that ea
 cases and results, and the active config the runtime watches. Next: Atlas Vector Search so
 recall ranks incidents by similarity.
 
+**Every beat is one LangSmith trace:** the agent's model calls and tool calls, the eval scores,
+and the brief the proposer saw with the candidates it returned. It is read-only: the harness never
+reads a trace back, so the evaluator stays the only judge.
+
 **Why it matters:** harnesses, not bigger models, are where agents get better — but an agent that
 takes real actions can't learn by trial and error in production. Scar Tissue gives it a gate.
 Agents that take actions hit retry-after-success in production, and today the fix is a human
@@ -52,5 +56,5 @@ showed recursive harness edits overfit unless regularized; this applies that dis
 incident at a time.
 
 **Built with:** MongoDB Atlas (change streams, `$lookup`, TTL indexes), OpenRouter (GPT-5.4 mini
-executor, GPT-6 Sol proposer), Next.js, TypeScript, zod. Built on 09-26; only the plan existed
+executor, GPT-6 Sol proposer), LangSmith (tracing), Next.js, TypeScript, zod. Built on 09-26; only the plan existed
 beforehand.

@@ -173,7 +173,7 @@ export type MemoryView =
     };
 
 export interface HitView extends IncidentView {
-  score: number;
+  score?: number; // only with vector search
 }
 
 export interface IncidentView {

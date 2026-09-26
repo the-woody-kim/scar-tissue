@@ -55,7 +55,10 @@ export default function Console({ initial, fixture }: { initial?: ConsoleState; 
       headers: { "content-type": "application/json" },
       body: body ? JSON.stringify(body) : undefined,
     });
-    if (!res.ok) setError(`POST ${url} → ${res.status}`);
+    if (!res.ok) {
+      const body = (await res.json().catch(() => null)) as { error?: string } | null;
+      setError(`POST ${url} → ${res.status}${body?.error ? ` · ${body.error}` : ""}`);
+    } else setError(null);
   }, []);
 
   const onBeat = (beat: BeatId, fault?: FaultPick) => {
@@ -76,7 +79,7 @@ export default function Console({ initial, fixture }: { initial?: ConsoleState; 
             <BeatsRow state={state} onBeat={onBeat} onReset={onReset} />
             <div className="flex min-h-0 grow gap-4">
               <RunPanel run={state.run} />
-              <HarnessPanel harness={state.harness} versions={state.versions} />
+              <HarnessPanel harness={state.harness} versions={state.versions} check={state.run?.check ?? null} />
               <MemoryPanel memory={state.memory} />
             </div>
           </>

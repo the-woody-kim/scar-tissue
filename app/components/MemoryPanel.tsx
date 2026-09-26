@@ -4,18 +4,20 @@ import { Card, Eyebrow, Icon, Panel } from "./ui";
 const COUNT = ["", "It", "Both", "All three", "All four"];
 
 export default function MemoryPanel({ memory }: { memory: MemoryView }) {
+  // With the transfer box on screen, two hits fit; three push it off the panel.
+  const hits = memory.kind === "recall" ? memory.hits.slice(0, memory.transferred ? 2 : 3) : [];
   return (
     <Panel className="min-w-0 grow gap-3.5">
       <div className="flex flex-col gap-1.5">
         <div className="flex items-center justify-between">
           <Eyebrow>03 · Memory</Eyebrow>
-          <Eyebrow>Atlas Vector Search</Eyebrow>
+          <Eyebrow>{memory.kind === "recall" && memory.index === "$lookup" ? "Atlas · $lookup" : "Atlas Vector Search"}</Eyebrow>
         </div>
         <div className="flex items-baseline justify-between gap-3">
           <h2 className="text-[17px] font-semibold">{memory.kind === "recall" ? memory.title : "Stored"}</h2>
           <span className="font-mono text-xs text-muted">
             {memory.kind === "recall"
-              ? `${memory.index} · top ${memory.hits.length} of ${memory.of}`
+              ? memory.index === "$lookup" ? `${hits.length} of ${memory.of} incidents` : `${memory.index} · top ${hits.length} of ${memory.of}`
               : `${memory.counts.live + memory.counts.seed} incidents · ${memory.counts.live} live · ${memory.counts.seed} seed`}
           </span>
         </div>
@@ -26,7 +28,7 @@ export default function MemoryPanel({ memory }: { memory: MemoryView }) {
             <Eyebrow>Query · {memory.query.label}</Eyebrow>
             <div className="font-mono text-[12.5px] leading-[1.55]">{memory.query.text}</div>
           </Card>
-          {memory.hits.map((h, i) => (
+          {hits.map((h, i) => (
             <Hit key={i} h={h} />
           ))}
           {memory.transferred ? (
@@ -45,9 +47,14 @@ export default function MemoryPanel({ memory }: { memory: MemoryView }) {
             </Card>
           ) : (
             <p className="mt-auto border-t border-line pt-3 text-[12.5px] text-muted">
-              One aggregation: <code className="font-mono text-ink">$vectorSearch</code> then{" "}
-              <code className="font-mono text-ink">$lookup</code> into policies, so every hit arrives with the fixes it
-              produced — promoted and rejected.
+              One aggregation:{" "}
+              {memory.index !== "$lookup" && (
+                <>
+                  <code className="font-mono text-ink">$vectorSearch</code> then{" "}
+                </>
+              )}
+              <code className="font-mono text-ink">$lookup</code> into policies, so every incident arrives with the fixes
+              it produced — promoted and rejected.
             </p>
           )}
         </>

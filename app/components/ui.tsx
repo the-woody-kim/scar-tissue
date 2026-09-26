@@ -73,8 +73,8 @@ export function CaseChip({ c }: { c: CaseView }) {
   );
 }
 
-export function CaseGrid({ cases }: { cases: CaseView[] }) {
-  const cols = cases.length > 4 ? "grid-cols-3" : "grid-cols-2";
+export function CaseGrid({ cases, row = false }: { cases: CaseView[]; row?: boolean }) {
+  const cols = row || cases.length > 4 ? "grid-cols-3" : "grid-cols-2";
   return (
     <div className={`grid ${cols} gap-[5px]`}>
       {cases.map((c) => (

@@ -1,11 +1,11 @@
-import type { ActiveView, CandidateView, HarnessView, RunSummary, VersionView } from "@/lib/state";
+import type { ActiveView, CandidateView, CheckView, HarnessView, RunSummary, VersionView } from "@/lib/state";
 import { PICK_LABEL } from "./RunPanel";
 import { Card, CaseChip, CaseGrid, Diff, Eyebrow, Panel, SectionChip, Stamp, passCount } from "./ui";
 
 const LEARN = ["Run", "Check", "Incident", "Recall", "Propose", "Eval", "Promote", "Reload"];
 const GRANT = ["Grant", "Recall", "Transfer", "Propose", "Eval", "Promote", "Reload"];
 
-export default function HarnessPanel({ harness, versions }: { harness: HarnessView; versions: VersionView[] }) {
+export default function HarnessPanel({ harness, versions, check }: { harness: HarnessView; versions: VersionView[]; check: CheckView | null }) {
   const phases = harness.kind === "grant" ? GRANT : LEARN;
   const done = harness.kind === "idle" ? 0 : harness.kind === "clean" ? 2 : phases.length;
   return (
@@ -23,7 +23,7 @@ export default function HarnessPanel({ harness, versions }: { harness: HarnessVi
             </span>
           ))}
         </div>
-        <Title harness={harness} />
+        <Title harness={harness} check={check} />
       </div>
       {harness.kind === "incident" && (
         <>
@@ -93,14 +93,17 @@ export default function HarnessPanel({ harness, versions }: { harness: HarnessVi
   );
 }
 
-function Title({ harness }: { harness: HarnessView }) {
+// "clean" must never sit over a failed check: the run panel's verdict wins.
+function Title({ harness, check }: { harness: HarnessView; check: CheckView | null }) {
   const [title, right] =
     harness.kind === "incident"
       ? [`Incident #${harness.incident.n}`, `${harness.before.version === 1 ? "baseline v1" : `v${harness.before.version} before`} · ${harness.before.pass}/${harness.before.total}`]
       : harness.kind === "grant"
         ? [`Tool grant · ${harness.tool}`, `v${harness.before.version} before · ${harness.before.pass}/${harness.before.total}`]
         : harness.kind === "clean"
-          ? ["No incident", "the check passed · nothing to learn"]
+          ? check && !check.ok
+            ? ["Still failing", `the check failed · ${check.effects} ${check.noun}s, expected ${check.expected}`]
+            : ["No incident", "the check passed · nothing to learn"]
           : ["Waiting", ""];
   return (
     <div className="flex items-baseline justify-between gap-3">
@@ -145,8 +148,18 @@ function Candidate({ c }: { c: CandidateView }) {
           <Stamp tone={promoted ? "accent" : "fail"}>{promoted ? `PROMOTED → v${c.promotedTo}` : "REJECTED"}</Stamp>
         </div>
       </div>
-      <Diff lines={c.diff} highlights={c.highlights} />
-      <CaseGrid cases={c.cases} />
+      {promoted ? (
+        <>
+          <Diff lines={c.diff} highlights={c.highlights} />
+          <CaseGrid cases={c.cases} />
+        </>
+      ) : (
+        // Rejected: the change's first line and only the cases it failed, so the winner stays on screen.
+        <>
+          <Diff lines={c.diff.slice(0, 1).map((l) => (l.length > 140 ? `${l.slice(0, 139)}…` : l))} highlights={c.highlights} />
+          <Misses c={c} />
+        </>
+      )}
       {c.failed && (
         <div className="text-[13px] text-muted">
           <span className="text-fail">Failed {c.failed.caseId}</span> — {c.failed.detail}
@@ -156,13 +169,31 @@ function Candidate({ c }: { c: CandidateView }) {
   );
 }
 
+// A rejected candidate's misses: the named failure first, capped at one row so a long suite
+// cannot push the next candidate off a 1080p screen.
+function Misses({ c }: { c: CandidateView }) {
+  const misses = c.cases.filter((x) => x.outcome !== "pass");
+  if (!misses.length) return null;
+  const named = c.failed?.caseId;
+  const ordered = [...misses.filter((x) => x.id === named), ...misses.filter((x) => x.id !== named)];
+  const shown = ordered.slice(0, 3).map((x) => (x.id === named ? { ...x, lit: true } : x));
+  return (
+    <div className="flex flex-col gap-1">
+      <CaseGrid cases={shown} row />
+      {misses.length > shown.length && (
+        <span className="font-mono text-[11.5px] text-muted">+{misses.length - shown.length} more not passed</span>
+      )}
+    </div>
+  );
+}
+
 function Compare({ before, after }: { before: RunSummary; after: RunSummary }) {
   return (
     <Card className="gap-3 px-[18px] py-3.5">
       <Eyebrow>Same fault · two policies</Eyebrow>
       <div className="grid grid-cols-2 gap-3">
-        {[before, after].map((r) => (
-          <div key={r.label} className={`flex flex-col gap-1 rounded-[10px] border px-4 py-3 ${r.ok ? "border-accent/40 bg-accent/[0.06]" : "border-fail/40 bg-fail/[0.07]"}`}>
+        {[before, after].map((r, i) => (
+          <div key={i}className={`flex flex-col gap-1 rounded-[10px] border px-4 py-3 ${r.ok ? "border-accent/40 bg-accent/[0.06]" : "border-fail/40 bg-fail/[0.07]"}`}>
             <span className="font-mono text-xs text-muted">
               {r.label} · v{r.version} · {r.hash}
             </span>

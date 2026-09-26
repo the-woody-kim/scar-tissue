@@ -101,7 +101,12 @@ async function cleanExtras(d: Db, last: Record<string, unknown>) {
   if (!incidentRun || incidentRun._id === last._id) return {};
   const summary = (r: Record<string, unknown>) => {
     const check = r.check as { effects: number; ok: boolean; noun: "order" | "refund" };
-    return { label: String(r.title).toLowerCase(), version: r.policyVersion as number, hash: r.policyHash as string, effects: check.effects, noun: check.noun, ok: check.ok, note: check.ok ? "Checked first, found it, adopted it." : "Retried without checking." };
+    const steps = (r.steps as { result?: { kind: string }; action?: string; fault?: string }[]) ?? [];
+    const adopted = steps.some((s) => s.result?.kind === "adopted");
+    const retried = steps.some((s) => s.action === "retry");
+    const faulted = steps.some((s) => s.fault);
+    const note = !check.ok ? "Retried without checking." : adopted ? "Checked first, found it, adopted it." : retried ? "Checked first, found nothing, retried once." : faulted ? "Recovered from the fault." : "No fault; placed once.";
+    return { label: String(r.title).toLowerCase(), version: r.policyVersion as number, hash: r.policyHash as string, effects: check.effects, noun: check.noun, ok: check.ok, note };
   };
   return { compare: { before: summary(incidentRun), after: summary(last) } };
 }

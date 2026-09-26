@@ -7,6 +7,8 @@ Statement One: Recursive Harnessing.
 
 **Try it:** https://scar-tissue-five.vercel.app/
 
+**Landing page:** https://scar-tissue-demo.vercel.app/
+
 **Demo video (1 min):** https://www.loom.com/share/7ca4cb6854ea49e09f5fea81ad3be1bd
 
 > **Status, 09-26, 14:35:** the whole loop runs live against Atlas. From a reset, the four beats

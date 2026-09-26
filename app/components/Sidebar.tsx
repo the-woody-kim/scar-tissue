@@ -8,6 +8,9 @@ import { Icon, Segments } from "./ui";
 const PICKS: FaultPick[] = ["after_commit", "before_commit", "after_commit_lookup_down", "none"];
 const DEFAULT_PICK: FaultPick = "after_commit";
 
+// The landing page (a separate Vercel project) links here; this links back.
+const ABOUT_URL = "https://scar-tissue-demo.vercel.app";
+
 // What each beat is for, shown until it has a result of its own. Copy only; nothing branches on it.
 const HINT: Record<string, string> = {
   "order-1": "Timeout after saving",
@@ -53,7 +56,12 @@ export default function Sidebar({
   return (
     <aside className="flex w-[280px] shrink-0 flex-col gap-6 border-r border-line bg-rail px-5 py-6">
       <div className="flex flex-col gap-0.5">
-        <div className="text-[18px] font-[650] tracking-[-0.01em]">Scar Tissue</div>
+        <div className="flex items-baseline justify-between gap-2">
+          <div className="text-[18px] font-[650] tracking-[-0.01em]">Scar Tissue</div>
+          <a href={ABOUT_URL} target="_blank" rel="noopener noreferrer" className="text-[12.5px] text-muted hover:text-ink">
+            About ↗
+          </a>
+        </div>
         <div className="text-[12.5px] text-muted">
           {state.store.name} · {state.store.agent}
         </div>

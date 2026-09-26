@@ -44,7 +44,9 @@ traces, incidents, versioned and hashed policies linked to the eval runs that ea
 cases and results, and the active config the runtime watches. Next: Atlas Vector Search so
 recall ranks incidents by similarity.
 
-**Why it matters:** agents that take actions hit retry-after-success in production, and today the
+**Why it matters:** harnesses, not bigger models, are where agents get better — but an agent that
+takes real actions can't learn by trial and error in production. Scar Tissue gives it a gate.
+Agents that take actions hit retry-after-success in production, and today the
 fix is a human postmortem. Scar Tissue makes the postmortem executable and tested. RRSI (arXiv
 2609.24972) showed recursive harness edits overfit unless regularized; this applies that
 discipline live, one incident at a time.

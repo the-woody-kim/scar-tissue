@@ -72,5 +72,10 @@ showed recursive harness edits overfit unless regularized; this applies that dis
 incident at a time.
 
 **Built with:** MongoDB Atlas (change streams, `$lookup`, TTL indexes), OpenRouter (GPT-5.4 mini
-executor, GPT-6 Sol proposer), LangSmith (tracing), MCP with Strands Agents, Next.js, TypeScript, zod. Built on 09-26; only the plan existed
-beforehand.
+executor, GPT-6 Sol proposer), LangSmith (tracing), MCP with Strands Agents, Next.js, TypeScript, zod.
+
+**What existed before hacking began at 10:30:** the plan, four screen mockups, the Next.js
+scaffold, and a static mock of the page that renders hand-written fixture JSON (commits `c362973`
+and `a0f45b1`, 09:38). Everything that runs was built after 10:30: the engine, the evaluator, the
+Atlas collections and change stream, the learning loop, the transfer to a new tool, the MCP server,
+the tracing and the benchmark.

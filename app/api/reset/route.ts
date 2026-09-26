@@ -8,7 +8,10 @@ export async function POST() {
   if (runtime.running) return Response.json({ error: `busy: ${runtime.running}` }, { status: 409 });
   runtime.running = "order-1";
   try {
+    const before = runtime.reload;
     await reset();
+    // The reset writes active_config; wait for the change stream to deliver that write, then clear it.
+    for (let t = 0; runtime.watching && runtime.reload === before && t < 2000; t += 50) await new Promise((r) => setTimeout(r, 50));
     runtime.reload = null;
     return Response.json({ ok: true });
   } catch (e) {

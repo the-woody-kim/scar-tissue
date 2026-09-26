@@ -64,38 +64,45 @@ The loop completed in **5 of 5** repetitions, and every check passed in every re
 
 ## Held-out benchmark: does the agent get better?
 
-Run on 2026-09-26 at 15:40 EDT, from commit `c238c47` plus uncommitted work. Rerun it with `npm run bench 3`. LangSmith
-dataset `scar-tissue · held-out`, experiments `bench-baseline-ca7b18ff` and
-`bench-learned-v4-98270793`, which the dataset's compare view shows side by side.
+Run on 2026-09-26 at 16:05–16:12 EDT, from a clean checkout of commit `8de2b7c`, with no other
+process using the database. Rerun it with `npm run bench 3`. LangSmith dataset
+`scar-tissue · held-out`, experiments `bench-baseline-ea6ed228` and `bench-learned-v4-6d46f27d`,
+which the dataset's compare view shows side by side.
 
 **Setup:**
 
 - **What changes between the arms:** only the policy. Both arms use the same live executor
   (`~openai/gpt-mini-latest`, seed 7, provider pinned to OpenAI).
   - *Baseline* is v1 with `issue_refund` enabled.
-  - *Learned* is the v4 the loop reached from a wiped database, earlier in the same run.
+  - *Learned* is the v4 the loop reached from a wiped database, earlier in the same run. It was
+    learned under the suite as of `8de2b7c`, before the two 10-minute seed cases (`5157707`).
 - **Held-out cases:** 11 of them, each run 3 times. They use customers, items, amounts and pairings
   that the evaluator's suite never uses, including two tasks that are *meant* to make two changes.
   The faults are none, before saving, after saving, and after saving with the lookup down.
 - **Scoring:** the evaluator's fixed judge (`runCase`), with the model running live instead of
   replaying a script.
 
-| | correct | duplicates |
-|---|---|---|
-| baseline (v1) | 12/33 (36%) | 21/33 (64%) |
-| learned (v4) | 29/33 (88%) | 2/33 (6%) |
+| | correct | duplicates | rate-limited |
+|---|---|---|---|
+| baseline (v1) | 12/33 (36%) | 21/33 (64%) | 0 |
+| learned (v4) | 31/33 (94%) | 0/33 | 2 |
 
 **Per case:**
 
 - **Every duplicate-prone case improved:**
-  - "times out after saving": 0/3 → 3/3 for orders, and 0/3 → 2/3 for refunds;
-  - the same with the lookup down: 0/3 → 3/3 for orders, and 0/3 → 2/3 for refunds;
-  - two different items for one customer: 0/3 → 3/3, making 2 orders rather than 3.
+  - "times out after saving": 0/3 → 3/3 for orders (two customers), and 0/3 → 2/3 for refunds;
+  - the same with the lookup down: 0/3 → 3/3 for orders and for refunds;
+  - two different items for one customer: 0/3 → 3/3, making 2 orders rather than 3;
+  - two legitimate partial refunds with a timeout after saving: 0/3 → 2/3.
 - **The cases with no fault, or a fault before saving, stayed correct under both arms.** The
   guardrail didn't break them.
-- **Of v4's 4 misses:**
-  - **2 were HTTP 429 rate limits.** They were scored uncertain, and aren't quality misses.
-  - **2 are real.** The refund-with-lookup-down case and the two-partial-refunds case each ended
-    with *0 refunds* while the agent reported "done". That is an unduplicated but wrong outcome, and
-    it's not yet explained.
+- **v4's 2 misses were both HTTP 429 rate limits** on the new-account key, scored uncertain. Every
+  learned run that finished was correct (31/31).
 - **Baseline's 21 misses are all duplicates.**
+
+**The earlier run (15:40, `bench-baseline-ca7b18ff` / `bench-learned-v4-98270793`) is superseded.**
+Another session's benchmark reset and re-learned on the same database while it ran, which can delete
+a case's setup order mid-run. That run had v4 at 29/33, with two refunds reported done but never
+made; the clean rerun didn't reproduce them. Its "2 duplicates" were the two rate-limited runs,
+miscounted: the script read the leading "429" of the error as the number of changes made.
+`scripts/bench.mts` now counts no changes for an uncertain run.

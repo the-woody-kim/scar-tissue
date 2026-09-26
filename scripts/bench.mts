@@ -101,7 +101,8 @@ const target = (policy: typeof v4) => async ({ case: c }: { case: CaseDef }) => 
   const id = `b_${Date.now().toString(36).slice(-5)}${Math.random().toString(36).slice(2, 5)}`;
   const r = await runCase(d, policy, c, id, true);
   const [effects] = r.result.split(" ");
-  return { outcome: r.outcome, result: r.result, effects: Number(effects), reports: r.result.split(" · ")[1] ?? "" };
+  // An uncertain run's result is the error ("429 Rate limit…"), not a count of changes made.
+  return { outcome: r.outcome, result: r.result, effects: r.outcome === "uncertain" ? NaN : Number(effects), reports: r.result.split(" · ")[1] ?? "" };
 };
 
 const score = (key: string, pass: boolean, comment?: string) => ({ key, score: pass ? 1 : 0, comment });

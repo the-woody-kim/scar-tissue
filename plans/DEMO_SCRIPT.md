@@ -67,6 +67,27 @@ version 4, and every version has a test run that earned it."
 
 - The recorded take. Switch line: "Here's the run from this afternoon —" and keep going.
 
+### Q&A: "Why not idempotency keys?"
+
+Get ahead of it. When "never retry" is rejected on screen, say: "This is why the answer isn't
+'just stop retrying' — and why a key alone isn't the lesson."
+
+If it's asked anyway (about 20 seconds):
+
+> "If the API takes idempotency keys, use them — that's the right fix for this fault. But agents
+> call tools they don't own, and many don't take keys. And the duplicate is the example, not the
+> product. The product is the process: the harness proposed three fixes, and the evaluator threw
+> out two. 'Never retry' broke the case where the timeout came before the save. The note to the
+> agent still ordered twice. A human writing a postmortem makes those mistakes too. Then it carried
+> the lesson to a refund tool before its first call. A key only fixes the endpoint it's added to."
+
+Backing points:
+- **Transfer:** `issue_refund` was at 7/9 before any refund ran; v4 shipped at 9/9.
+- **Not only duplicates:** the invariants caught a $20 refund on a $9.75 order. It was caught, not
+  learned from — say "caught".
+- **Don't claim** the harness would pick a key-based fix: the policy format can't express one.
+- **Next:** a second fault class that isn't a duplicate.
+
 ### Commands
 
 ```bash

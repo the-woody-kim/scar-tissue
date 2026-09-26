@@ -55,6 +55,7 @@ first use.
 | Versioned harness | documents | `policies`: version, hash, parent, status, origin, change, diff, eval run, result |
 | Evaluation | documents | `eval_cases` (seed / incident / transfer), `eval_runs` |
 | Live reload | change stream | `active_config` (one document) |
+| One run at a time | documents | `locks` (one document): what holds it, a release token, an expiry |
 | The harness panel | documents | `learning`: one per incident or grant, with the candidates as shown |
 
 Not built: Atlas Vector Search over incidents. The memory panel says `Atlas · $lookup` and shows
@@ -83,7 +84,8 @@ regenerates them). Plain `/` polls `GET /api/state` every 500 ms.
  Page ── GET /api/state (500 ms) ── POST /api/beat {beat, fault?} ── POST /api/reset
    │
  Next.js, one long-lived process (next dev / next start)
-   runtime: running beat + last reload (globalThis) ◄── change stream on active_config
+   runtime: last reload (globalThis) ◄── change stream on active_config
+   lock (lib/engine/lock.ts): the running beat, a document in Atlas, so every instance sees it
    Run (lib/engine/run.ts): executor LLM → harness.call → policy (rules, guardrails,
         limits) → fault injector → tools on Atlas
    harness (lib/engine/harness.ts): check → incident → cases → recall → propose →
@@ -186,6 +188,7 @@ lib/engine/policy.ts            DSL (zod), apply, diff lines, hash
 lib/engine/run.ts               tools, fault injector, the harness call wrapper, the executor
 lib/engine/harness.ts           cases, evaluator, learning loop, screen, recall, beats, grant, reset
 lib/engine/state.ts             runtime, change stream, ConsoleState assembly
+lib/engine/lock.ts              one run at a time across instances: acquire, release, holder
 scripts/                        reset.mts · beat.mts · eval.mts · ping.mts
 fixtures/state/                 saved page states and their generator
 ```

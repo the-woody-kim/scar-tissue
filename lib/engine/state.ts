@@ -2,11 +2,13 @@ import type { Db } from "mongodb";
 import type { ActiveView, BeatId, ConsoleState, HarnessView, IncidentView, MemoryView, PolicyCaseView, RunView, VersionView } from "@/lib/state";
 import { db } from "./db";
 import { activePolicy, recallFor } from "./harness";
+import { holder } from "./lock";
 import { Policy, guardrailLines } from "./policy";
 
-// Runtime: what's running, and the last reload the change stream delivered.
-const g = globalThis as unknown as { __st_rt?: { running: BeatId | null; reload: { at: string; via: "change stream" } | null; watching: boolean } };
-export const runtime = (g.__st_rt ??= { running: null, reload: null, watching: false });
+// Runtime: the last reload this process's change stream delivered. What's running lives in Atlas
+// (./lock), because on Vercel the run and the poll can land on different instances.
+const g = globalThis as unknown as { __st_rt?: { reload: { at: string; via: "change stream" } | null; watching: boolean } };
+export const runtime = (g.__st_rt ??= { reload: null, watching: false });
 
 export async function watchActiveConfig() {
   if (runtime.watching) return;
@@ -73,7 +75,7 @@ export async function consoleState(): Promise<ConsoleState> {
   return {
     mode: process.env.LLM_MODE === "replay" ? "replay" : "live",
     store: { name: "Northside Grocer", agent: "order agent" },
-    policy, reload: runtime.reload, beats, running: runtime.running,
+    policy, reload: runtime.reload, beats, running: await holder(),
     run: last ? runView(last) : null, harness, memory, versions,
   };
 }

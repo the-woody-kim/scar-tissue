@@ -42,8 +42,8 @@ instead of editing files.
   goes through `chat()` in `lib/engine/llm.ts`: `LLM_CONCURRENCY` in flight (default 5), backoff
   on 429 — the key is on a new-account tier.
 - **MongoDB Atlas (Hackathon Sandbox):** `orders`, `runs`, `incidents`, `policies`, `eval_cases`,
-  `eval_runs`, `learning`, `active_config` (change stream). Recall is a `$lookup` aggregation;
-  Vector Search is not built.
+  `eval_runs`, `learning`, `active_config` (change stream), `locks` (one run at a time). Recall is
+  a `$lookup` aggregation; Vector Search is not built.
 - **Validation:** zod for the policy DSL and the proposer's output.
 - **Scripts:** `npm run reset` · `npm run beat <name> [pick]` · `npm run eval` (tsx).
 

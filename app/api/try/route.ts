@@ -1,5 +1,5 @@
 import { runPrompt, type Pick } from "@/lib/engine/harness";
-import { runtime } from "@/lib/engine/state";
+import { acquire, holder, release } from "@/lib/engine/lock";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -15,15 +15,16 @@ export async function POST(req: Request) {
   if (!prompt) return Response.json({ error: "type a request first" }, { status: 400 });
   if (prompt.length > MAX) return Response.json({ error: `keep it under ${MAX} characters` }, { status: 400 });
   if (body.fault && !PICKS.includes(body.fault)) return Response.json({ error: "unknown fault" }, { status: 400 });
-  if (runtime.running) return Response.json({ error: `busy: ${runtime.running}` }, { status: 409 });
-  runtime.running = "prompt"; // claimed before any await, so two clicks can't both run
+  let token: string | null = null;
   try {
+    token = await acquire("prompt"); // atomic in Atlas, so two clicks on two instances can't both run
+    if (!token) return Response.json({ error: `busy: ${(await holder()) ?? "another run"}` }, { status: 409 });
     await runPrompt(prompt, body.fault);
     return Response.json({ ok: true });
   } catch (e) {
     console.error(e);
     return Response.json({ error: (e as Error).message }, { status: 500 });
   } finally {
-    runtime.running = null;
+    if (token) await release(token);
   }
 }

@@ -1,5 +1,6 @@
 import { runBeat, type Pick } from "@/lib/engine/harness";
-import { consoleState, runtime } from "@/lib/engine/state";
+import { acquire, holder, release } from "@/lib/engine/lock";
+import { consoleState } from "@/lib/engine/state";
 import type { BeatId } from "@/lib/state";
 
 export const dynamic = "force-dynamic";
@@ -12,9 +13,10 @@ export async function POST(req: Request) {
   const body = (await req.json().catch(() => ({}))) as { beat?: BeatId; fault?: Pick };
   if (!body.beat || !BEATS.includes(body.beat)) return Response.json({ error: "unknown beat" }, { status: 400 });
   if (body.fault && !PICKS.includes(body.fault)) return Response.json({ error: "unknown fault" }, { status: 400 });
-  if (runtime.running) return Response.json({ error: `busy: ${runtime.running}` }, { status: 409 });
-  runtime.running = body.beat; // claimed before any await, so two clicks can't both run
+  let token: string | null = null;
   try {
+    token = await acquire(body.beat); // atomic in Atlas, so two clicks on two instances can't both run
+    if (!token) return Response.json({ error: `busy: ${(await holder()) ?? "another run"}` }, { status: 409 });
     const next = (await consoleState()).beats.find((b) => b.status === "next")?.id;
     if (body.beat !== "order-n" && body.beat !== next) return Response.json({ error: `run ${next ?? "Reset demo"} first` }, { status: 409 });
     await runBeat(body.beat, body.fault);
@@ -23,6 +25,6 @@ export async function POST(req: Request) {
     console.error(e);
     return Response.json({ error: (e as Error).message }, { status: 500 });
   } finally {
-    runtime.running = null;
+    if (token) await release(token);
   }
 }

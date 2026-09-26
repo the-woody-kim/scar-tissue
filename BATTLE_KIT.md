@@ -33,25 +33,24 @@ Keep this open on your phone. It is the only file that holds clock times.
 
 ## Timeline
 
-Hacking begins at **____** = T+0. The window is assumed to be 6½ h — unconfirmed. If it turns out
-longer, the extra goes to rehearsal and the cut list stays cut.
+Hacking begins at **10:00** = T+0. Submission is **16:30** (confirmed), so the window is 6½ h.
 
 | T+ | Clock | Phase | Done = |
 |---|---|---|---|
-| 0:00–0:20 | | **Setup** — create-next-app (beside the folder, then copied in: `AGENTS.md` step 1), public repo, `.env.local`, collections, vector index first | `npm run reset` rebuilds a seeded, empty database |
-| 0:20–1:30 | | **Engine (Task 1a)** — tools, faults, policy engine, executor, trace | `npm run beat order-1` → 2 orders + trace in Atlas |
-| 1:30–2:15 | | **Evaluator (Task 1b)** — invariants, scopes, three outcomes | `npm run eval` prints v1's grid |
-| 2:15–3:00 | | **Learning loop (Task 1c)** — incident → cases → propose → eval → promote → reload | one REJECTED, one PROMOTED; order-2 clean |
-| 3:00–3:15 | | Eat, away from the screen | — |
-| **3:15** | | **HALFWAY GATE** | Is order-1 → v2 → order-2 working from the CLI? If no → cut the transfer (cut list #3) |
-| 3:15–4:00 | | **Memory + transfer (Task 2)** | grant → v4 promoted before any refund; refund-1 clean |
-| 4:00–5:00 | | **UI** — three panels + fault picker | each beat is one click and reads at 1080p |
-| **5:00** | | **FEATURE FREEZE** (= submission − 1:30) | nothing new after this |
-| 5:00–5:15 | | Wipe the DB; one full run with `LLM_MODE=record` | fixtures saved |
-| 5:15–5:25 | | **Backup video** | a complete take exists |
-| 5:25–5:50 | | Description + README | `plans/DESCRIPTION.md` final, numbers measured |
-| 5:50–6:10 | | Final live take, edit, **audio check** | 60 s or less, plays with sound |
-| 6:10–6:20 | | Submit on Cerebral Valley | submitted by **T+6:20** (= submission − 10 min) |
+| 0:00–0:20 | 10:00–10:20 | **Setup** — create-next-app (beside the folder, then copied in: `AGENTS.md` step 1), public repo, `.env.local`, collections, vector index first | `npm run reset` rebuilds a seeded, empty database |
+| 0:20–1:30 | 10:20–11:30 | **Engine (Task 1a)** — tools, faults, policy engine, executor, trace | `npm run beat order-1` → 2 orders + trace in Atlas |
+| 1:30–2:15 | 11:30–12:15 | **Evaluator (Task 1b)** — invariants, scopes, three outcomes | `npm run eval` prints v1's grid |
+| 2:15–3:00 | 12:15–13:00 | **Learning loop (Task 1c)** — incident → cases → propose → eval → promote → reload | one REJECTED, one PROMOTED; order-2 clean |
+| 3:00–3:15 | 13:00–13:15 | Eat, away from the screen | — |
+| **3:15** | **13:15** | **HALFWAY GATE** | Is order-1 → v2 → order-2 working from the CLI? If no → cut the transfer (cut list #3) |
+| 3:15–4:00 | 13:15–14:00 | **Memory + transfer (Task 2)** | grant → v4 promoted before any refund; refund-1 clean |
+| 4:00–5:00 | 14:00–15:00 | **UI** — three panels + fault picker | each beat is one click and reads at 1080p |
+| **5:00** | **15:00** | **FEATURE FREEZE** (= submission − 1:30) | nothing new after this |
+| 5:00–5:15 | 15:00–15:15 | Wipe the DB; one full run with `LLM_MODE=record` | fixtures saved |
+| 5:15–5:25 | 15:15–15:25 | **Backup video** | a complete take exists |
+| 5:25–5:50 | 15:25–15:50 | Description + README | `plans/DESCRIPTION.md` final, numbers measured |
+| 5:50–6:10 | 15:50–16:10 | Final live take, edit, **audio check** | 60 s or less, plays with sound |
+| 6:10–6:20 | 16:10–16:20 | Submit on Cerebral Valley | submitted by **16:20** (= submission − 10 min) |
 
 Freeze is 1:30 before the deadline rather than 2:00 because the video is one minute, not a pitch.
 
@@ -102,7 +101,7 @@ Say the version the demo actually reached.
 
 1. Record from a wiped database — the first click in the video is the cold path.
 2. Real-looking data only: Northside Grocer (fictional), named customers, real prices.
-3. The backup take exists by T+5:25. If a live take breaks, use it; don't apologise.
+3. The backup take exists by 15:25 (T+5:25). If a live take breaks, use it; don't apologise.
 4. Speed-ramp waits with a visible "4×". Never cut a result out of order.
 5. Browser full screen (⌃⌘F) at 110%, so the whole 1536 × 920 page is in frame. Notifications off.
 6. The video is 60 s. Rehearse to 55.
@@ -119,7 +118,7 @@ Say the version the demo actually reached.
 - [ ] 1-minute video showing the code and what it does — plays with video **and** audio
 - [ ] Concise description (`plans/DESCRIPTION.md`)
 - [ ] Built in the sandbox cluster
-- [ ] Submitted by T+6:20
+- [ ] Submitted by 16:20 (T+6:20)
 
 ## If you make the top 6
 

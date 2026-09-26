@@ -1,36 +1,116 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Scar Tissue
 
-## Getting Started
+**Every agent failure becomes a tested upgrade to its own harness.**
 
-First, run the development server:
+Built on 2026-09-26 for the MongoDB Harness Engineering & Model Wrangling Hackathon, NYC —
+Statement One: Recursive Harnessing.
+
+> **Status, 09-26:** the page is built against saved states in `fixtures/state/`. The engine,
+> evaluator, learning loop and Atlas wiring are being built today. This README is rewritten at
+> feature freeze with the numbers the recorded run actually measured.
+
+![Design mockup: order #1 teaches the harness](plans/screens/beat-1-order-lesson.png)
+
+*Design mockup. Counts, hashes and scores in it are examples; the demo video shows live data.*
+
+## The problem
+
+Agents that take real actions repeat operational mistakes. The classic one: an order API times
+out *after* it saved the order, the default retry places it again, and the customer is charged
+twice. Today the fix is a human postmortem and a patch. Nothing turns the failure into a tested,
+lasting change to how the agent runs.
+
+## What it does
+
+An LLM agent runs a small store's orders in MongoDB Atlas. After every run, a fixed evaluator
+checks invariants: one effect per request, and the agent's report matches the database. When a
+run breaks one, the harness — with no human in the loop:
+
+1. **Records the incident** and turns it into test cases, including a variant where a dependency
+   fails too.
+2. **Recalls similar incidents** with Atlas Vector Search, joined with `$lookup` to the fixes that
+   were promoted and the fixes that were rejected.
+3. **Asks a model for candidate changes** to its own policy — rules, guardrails, context or tool
+   access — in a typed format.
+4. **Screens out any candidate that names the incident** (its customer, product or order ids): a
+   fix has to work for everyone.
+5. **Runs every remaining candidate** against a fixed evaluator it cannot edit. Each case is pass,
+   fail or uncertain; uncertain never ships, and a candidate is promoted only if every case
+   passes. The smallest change wins.
+6. **Hot-reloads the winner** through a change stream, pinned by hash, so what was tested is
+   exactly what runs.
+
+When the operator grants a new tool, the harness recalls the scars that fit it, turns them into
+tests for that tool, and ships a fix before the tool's first call.
+
+The agent ends as the same model it started as. Its harness has a new version, and every version
+has a test run that earned it.
+
+### Why not idempotency keys?
+
+When an API accepts one, use it — that's a fix this harness should be able to propose. The mock
+order API here refuses them, like many APIs an agent calls but doesn't own, so the harness has to
+find another way. The fix isn't the point: the harness finds it, tests it, and throws out a worse
+one by itself.
+
+## The demo
+
+| Beat | What happens |
+|---|---|
+| Run order #1 | The API times out after saving; the default retry orders twice. The harness rejects "never retry" (it fails a case where retrying is right) and promotes "check before retrying". |
+| Run order #2 | Same fault. The agent checks, finds the saved order and adopts it: one order. |
+| Grant `issue_refund` | Recall finds the order scar and its rejected fix. The lesson becomes refund tests, and a refund fix ships before any refund has run. |
+| Run refund #1 | Same fault on the new tool: one refund. |
+| Run another order | Live only: a judge picks the fault to inject. Only the fault injector knows the pick. |
+
+## Where MongoDB does the work
+
+| Job | Atlas feature |
+|---|---|
+| The orders the agent acts on | documents with embedded refunds; eval data expires by TTL |
+| Every run's trace | `runs` |
+| Memory | Vector Search over `incidents`, `$lookup` to promoted and rejected attempts |
+| The versioned harness | `policies` — version, hash, parent, diff, provenance |
+| Evaluation | `eval_cases`, `eval_runs` |
+| Live reload | a change stream on `active_config` |
+
+Models come through OpenRouter; embeddings from Atlas Automated Embeddings or Voyage AI.
+
+## Run it
 
 ```bash
+npm install
+cp .env.example .env.local   # Atlas URI, OpenRouter key and models
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- `http://localhost:3000/?fixture=order-1` shows the page with a saved state (also `reset`,
+  `order-2`, `grant`, `refund-1`, `order-n`). No database or keys needed.
+- `http://localhost:3000/` polls the engine at `/api/state`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+`npm run reset` and `npm run beat <name>` arrive with the engine.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Layout
 
-## Learn More
+```
+app/                  the page (three panels, the beats row, the fault picker)
+lib/state.ts          the GET /api/state contract between the page and the engine
+lib/                  tools, fault injector, policy engine, executor, evaluator, harness
+fixtures/state/       saved page states; regenerate with node fixtures/state/make.mjs
+SPEC.md               what gets built, with the locked schemas
+AGENTS.md             shared instructions for the coding agents
+plans/                demo script, submission draft, screen mockups
+```
 
-To learn more about Next.js, take a look at the following resources:
+## How it was built
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Two coding agents, one repo, a clear split: Codex builds the engine (`lib/`, `app/api/`, scripts,
+seeds, Atlas); Claude Code on Opus 5.5 builds the page and owns the design. They meet at a typed
+contract, `lib/state.ts`. The plan was written the night before; no code existed before the event.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Prior art
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+RRSI ([arXiv 2609.24972](https://arxiv.org/abs/2609.24972), September 2026) showed on benchmarks
+that recursive harness edits overfit to the tasks that caused them unless they're regularized —
+edit budgets, a leakage screen, a no-regression floor. Scar Tissue applies the same discipline
+live, one production incident at a time.

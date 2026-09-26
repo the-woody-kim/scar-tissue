@@ -74,7 +74,7 @@ async function fourBeats() {
   return out;
 }
 
-type O = Record<string, any>;
+type O = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 const score = (key: string, pass: boolean, comment?: string) => ({ key, score: pass ? 1 : 0, comment });
 const rejectedNamed = (l: O | null) => (l?.candidates ?? []).some((c: O) => c.status === "rejected" && c.failed);
 

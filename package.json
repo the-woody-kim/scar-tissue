@@ -10,7 +10,8 @@
     "reset": "tsx scripts/reset.mts",
     "beat": "tsx scripts/beat.mts",
     "eval": "tsx scripts/eval.mts",
-    "experiment": "tsx scripts/experiment.mts"
+    "experiment": "tsx scripts/experiment.mts",
+    "bench": "tsx scripts/bench.mts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.1",

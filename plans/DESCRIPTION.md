@@ -35,6 +35,12 @@ it has never used. Its policy passes 7/9 before any refund runs, a "no refund re
 rejected, and a refund guardrail ships as v4 at 9/9. The first refund times out and is adopted:
 one refund. Same model throughout; only the harness changed.
 
+**Benchmarked on held-out tasks:** the same executor model, run live on 11 tasks × faults it never
+learned from (3 runs each), was correct 36% of the time under the starting policy and 88% under the
+policy it wrote for itself; duplicate orders and refunds fell from 64% to 6% of runs. Only the harness
+changed. Two of the 33 learned runs still went wrong (a refund reported done but not made), and two
+more hit a rate limit. Both arms are LangSmith experiments on one dataset, compared side by side.
+
 **Try to break it:** anyone can type their own request into the page. The agent runs it on the
 active policy, and fixed invariants judge the result: no duplicate orders or refunds, no refund
 above the order's total, and a report that matches the database. In testing, a customer talked

@@ -71,7 +71,8 @@ function judge(effects: number, expected: number, reports: Report[], accept: str
   return effects === expected && agrees && reports.every((r) => r.status && accept.includes(r.status)) ? "pass" : "fail";
 }
 
-async function runCase(d: Db, policy: Policy, c: CaseDef, evalRunId: string): Promise<CaseResult> {
+// `live` asks the model instead of replaying the call plan: the held-out benchmark (scripts/bench.mts).
+export async function runCase(d: Db, policy: Policy, c: CaseDef, evalRunId: string, live = false): Promise<CaseResult> {
   const scope = `${evalRunId}/${c._id}`;
   const expiresAt = new Date(Date.now() + 3600_000);
   try {
@@ -86,7 +87,7 @@ async function runCase(d: Db, policy: Policy, c: CaseDef, evalRunId: string): Pr
     for (const [i, task] of c.tasks.entries()) {
       const runId = `${scope}#${i}`;
       runIds.push(runId);
-      const run = new Run({ db: d, scope, runId, policy, plan: i === 0 ? c.faults : [], timeoutMs: 150, expiresAt, scripted: true });
+      const run = new Run({ db: d, scope, runId, policy, plan: i === 0 ? c.faults : [], timeoutMs: 150, expiresAt, scripted: !live });
       reports.push(await withTimeout(execute(run, policy, task), 240_000));
     }
     const effects = await countEffects(d, scope, runIds, c.tasks[0].kind);

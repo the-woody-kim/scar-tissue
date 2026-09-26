@@ -82,7 +82,9 @@ export function tell(state: ConsoleState): Story {
     : state.beats.findIndex((b) => b.id === state.running) >= 0
       ? state.beats.findIndex((b) => b.id === state.running)
       : state.beats.map((b) => b.status).lastIndexOf("done");
-  const eyebrow = state.running
+  const eyebrow = state.running === "reset"
+    ? "Resetting"
+    : state.running
     ? "Running"
     : typed
       ? "Visitor request"

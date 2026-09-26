@@ -155,7 +155,7 @@ export default function Sidebar({
             {state.running === "order-n" ? "Running…" : "Another order"}
           </button>
           <button type="button" disabled={busy} onClick={onReset} className="h-[34px] px-1 text-[13px] text-muted hover:text-ink disabled:cursor-wait">
-            Reset demo
+            {state.running === "reset" ? "Resetting…" : "Reset demo"}
           </button>
         </div>
       </div>

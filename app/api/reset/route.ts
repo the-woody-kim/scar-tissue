@@ -8,7 +8,7 @@ export const maxDuration = 300;
 export async function POST() {
   let token: string | null = null;
   try {
-    token = await acquire("order-1");
+    token = await acquire("reset");
     if (!token) return Response.json({ error: `busy: ${(await holder()) ?? "another run"}` }, { status: 409 });
     const before = runtime.reload;
     await reset();

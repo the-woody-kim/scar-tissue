@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { BeatId } from "@/lib/state";
+import type { Running } from "@/lib/state";
 import { db } from "./db";
 
 // One run at a time, across every server instance. On Vercel a request can land on any instance,
@@ -7,11 +7,11 @@ import { db } from "./db";
 // holds it for at most TTL_MS.
 const TTL_MS = 310_000; // the routes' maxDuration (300 s), plus slack
 
-interface Lock { _id: "run"; running: BeatId | null; token: string | null; until: Date }
+interface Lock { _id: "run"; running: Running | null; token: string | null; until: Date }
 const locks = async () => (await db()).collection<Lock>("locks");
 
 // The token to release with, or null when another run holds the lock.
-export async function acquire(what: BeatId): Promise<string | null> {
+export async function acquire(what: Running): Promise<string | null> {
   const token = randomUUID();
   const now = new Date();
   try {
@@ -32,7 +32,7 @@ export async function release(token: string) {
   await (await locks()).updateOne({ _id: "run", token }, { $set: { running: null, token: null } });
 }
 
-export async function holder(): Promise<BeatId | null> {
+export async function holder(): Promise<Running | null> {
   const l = await (await locks()).findOne({ _id: "run" });
   return l?.running && l.until > new Date() ? l.running : null;
 }

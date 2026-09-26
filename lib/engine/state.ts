@@ -72,10 +72,12 @@ export async function consoleState(): Promise<ConsoleState> {
     version: p.version, hash: p.hash, origin: p.origin === "operator" ? "granted" : p.origin, ...(p.trigger?.incidentIds?.length === 1 ? { incident: Number(String(p.trigger.incidentIds[0]).replace("inc_", "")) } : {}), ...(p.evalRunId ? { evalRunId: p.evalRunId } : {}),
   }));
 
+  // Read last: a read that overlapped a reset's wipe then reports the reset, and /api/state drops it.
+  const running = await holder();
   return {
     mode: process.env.LLM_MODE === "replay" ? "replay" : "live",
     store: { name: "Northside Grocer", agent: "order agent" },
-    policy, reload: runtime.reload, beats, running: await holder(),
+    policy, reload: runtime.reload, beats, running,
     run: last ? runView(last) : null, harness, memory, versions,
   };
 }

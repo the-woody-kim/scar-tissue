@@ -76,7 +76,8 @@ no similarity scores.
   grant; otherwise what's stored.
 
 `/?fixture=<name>` renders a saved state from `fixtures/state/` (`node fixtures/state/make.mjs`
-regenerates them). Plain `/` polls `GET /api/state` every 500 ms.
+regenerates them). Plain `/` polls `GET /api/state` every 500 ms; while a reset holds the lock it
+answers 202 and the page keeps what it has, shown as busy.
 
 ## 5. Architecture
 

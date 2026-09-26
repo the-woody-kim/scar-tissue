@@ -34,6 +34,14 @@ export default function Console({ initial, fixture }: { initial?: ConsoleState; 
     const poll = async () => {
       try {
         const res = await fetch("/api/state", { cache: "no-store" });
+        // A reset is rebuilding the database: keep what's on screen, shown as busy, until it's done.
+        if (res.status === 202) {
+          if (alive) {
+            setState((s) => s && { ...s, running: "reset" });
+            setError(null);
+          }
+          return;
+        }
         if (!res.ok) throw new Error(`GET /api/state → ${res.status}`);
         const next = (await res.json()) as ConsoleState;
         if (alive) {

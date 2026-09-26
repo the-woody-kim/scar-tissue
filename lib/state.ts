@@ -3,7 +3,8 @@
 // Change it freely — the page and fixtures/state/*.json follow.
 //
 // The page calls, and nothing else:
-//   GET  /api/state                          → ConsoleState (polled every 500 ms)
+//   GET  /api/state                          → ConsoleState (polled every 500 ms), or 202
+//                                               { running: "reset" } while a reset rebuilds the DB
 //   POST /api/beat   { beat: BeatId, fault? } → runs a beat; `fault` is the picker's value and
 //                                               applies to that run only
 //   POST /api/try    { prompt, fault? }      → a visitor's own request, judged by fixed invariants
@@ -11,6 +12,7 @@
 
 export type Mode = "live" | "replay";
 export type BeatId = "order-1" | "order-2" | "grant-issue_refund" | "refund-1" | "order-n" | "prompt";
+export type Running = BeatId | "reset"; // what holds the one-run lock
 export type FaultPick = "after_commit" | "before_commit" | "after_commit_lookup_down" | "none";
 export type Fault = "timeout_after_commit" | "timeout_before_commit" | "lookup_error";
 export type Outcome = "pass" | "fail" | "uncertain";
@@ -22,7 +24,7 @@ export interface ConsoleState {
   policy: PolicyView;
   reload: { at: string; via: "change stream" | "polling" } | null;
   beats: { id: Exclude<BeatId, "order-n">; label: string; status: "done" | "next" | "todo" | "running" }[];
-  running: BeatId | null;
+  running: Running | null;
   run: RunView | null;
   harness: HarnessView;
   memory: MemoryView;

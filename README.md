@@ -5,6 +5,10 @@
 Built on 2026-09-26 for the MongoDB Harness Engineering & Model Wrangling Hackathon, NYC —
 Statement One: Recursive Harnessing.
 
+**Try it:** https://scar-tissue-five.vercel.app/
+
+**Demo video (1 min):** https://www.loom.com/share/7ca4cb6854ea49e09f5fea81ad3be1bd
+
 > **Status, 09-26, 14:35:** the whole loop runs live against Atlas. From a reset, the four beats
 > take about a minute: v2 promoted over a rejected no-retry rule, order #2 adopted, v4 promoted by
 > transfer before the first refund, refund #1 adopted. Recall is a `$lookup` join for now; Atlas
@@ -12,7 +16,7 @@ Statement One: Recursive Harnessing.
 
 ![Design mockup: order #1 teaches the harness](plans/screens/beat-1-order-lesson.png)
 
-*Design mockup. Counts, hashes and scores in it are examples; the demo video shows live data.*
+*Design mockup. Counts, hashes and scores in it are examples; the [demo video](https://www.loom.com/share/7ca4cb6854ea49e09f5fea81ad3be1bd) shows live data.*
 
 ## The problem
 

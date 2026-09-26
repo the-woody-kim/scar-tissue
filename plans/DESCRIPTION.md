@@ -4,6 +4,8 @@
 
 **Scar Tissue: every agent failure becomes a tested upgrade to its own harness.**
 Statement One, Recursive Harnessing · github.com/the-woody-kim/scar-tissue
+Try it: https://scar-tissue-five.vercel.app/
+Video (1 min): https://www.loom.com/share/7ca4cb6854ea49e09f5fea81ad3be1bd
 
 An LLM agent takes orders for a fictional grocery in MongoDB Atlas. When a run breaks an
 invariant (the order API times out after saving, and the default retry orders twice), the harness
@@ -37,6 +39,8 @@ end to end). Re-check them against the recorded take before submitting.
 ## Scar Tissue
 
 **Every agent failure becomes a tested upgrade to its own harness.**
+
+**Demo video (1 min):** https://www.loom.com/share/7ca4cb6854ea49e09f5fea81ad3be1bd
 
 An LLM agent takes a small grocery's orders in MongoDB Atlas. When a run breaks an invariant —
 the order API times out after saving, and the default retry orders twice — the harness, with no

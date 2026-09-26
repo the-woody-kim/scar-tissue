@@ -1,0 +1,24 @@
+# Local environment files
+.env.local
+.env.*.local
+
+# Private hackathon resource guide; never publish with the public repository
+/plans/resource-guide.txt
+/plans/resource-guide.pdf
+
+# Next.js defaults, kept here because the scaffold is copied in without overwriting this file
+/node_modules
+/.next/
+/out/
+/build
+/coverage
+*.tsbuildinfo
+next-env.d.ts
+.vercel
+.env
+.DS_Store
+*.pem
+npm-debug.log*
+
+# Private notes; never publish
+/plans/private/

@@ -1,6 +1,6 @@
 import type { ActiveView, CandidateView, CheckView, HarnessView, RunSummary, VersionView } from "@/lib/state";
 import { PICK_LABEL } from "./RunPanel";
-import { Card, CaseChip, CaseGrid, Diff, Eyebrow, Panel, SectionChip, Stamp, passCount } from "./ui";
+import { Card, CaseChip, CaseGrid, Diff, Eyebrow, Icon, Panel, SectionChip, Stamp, passCount } from "./ui";
 
 const LEARN = ["Run", "Check", "Incident", "Recall", "Propose", "Eval", "Promote", "Reload"];
 const GRANT = ["Grant", "Recall", "Transfer", "Propose", "Eval", "Promote", "Reload"];
@@ -151,7 +151,15 @@ function Candidate({ c }: { c: CandidateView }) {
       {promoted ? (
         <>
           <Diff lines={c.diff} highlights={c.highlights} />
-          <CaseGrid cases={c.cases} />
+          {c.cases.length > 4 ? (
+            // A long suite would push the version history off a 1080p screen; the pill opens the grid.
+            <div className="flex items-center gap-2 text-[13px] text-accent">
+              <Icon kind="check" />
+              <span>All {c.cases.length} cases pass. The pill opens the grid.</span>
+            </div>
+          ) : (
+            <CaseGrid cases={c.cases} />
+          )}
         </>
       ) : (
         // Rejected: the change's first line and only the cases it failed, so the winner stays on screen.

@@ -5,9 +5,10 @@
 Built on 2026-09-26 for the MongoDB Harness Engineering & Model Wrangling Hackathon, NYC —
 Statement One: Recursive Harnessing.
 
-> **Status, 09-26:** the page is built against saved states in `fixtures/state/`. The engine,
-> evaluator, learning loop and Atlas wiring are being built today. This README is rewritten at
-> feature freeze with the numbers the recorded run actually measured.
+> **Status, 09-26, 14:35:** the whole loop runs live against Atlas. From a reset, the four beats
+> take about a minute: v2 promoted over a rejected no-retry rule, order #2 adopted, v4 promoted by
+> transfer before the first refund, refund #1 adopted. Recall is a `$lookup` join for now; Atlas
+> Vector Search over incidents is next.
 
 ![Design mockup: order #1 teaches the harness](plans/screens/beat-1-order-lesson.png)
 
@@ -28,8 +29,8 @@ run breaks one, the harness — with no human in the loop:
 
 1. **Records the incident** and turns it into test cases, including a variant where a dependency
    fails too.
-2. **Recalls similar incidents** with Atlas Vector Search, joined with `$lookup` to the fixes that
-   were promoted and the fixes that were rejected.
+2. **Recalls past incidents** from Atlas with one `$lookup` aggregation that brings back the fixes
+   each produced — promoted and rejected.
 3. **Asks a model for candidate changes** to its own policy — rules, guardrails, context or tool
    access — in a typed format.
 4. **Screens out any candidate that names the incident** (its customer, product or order ids): a
@@ -69,12 +70,12 @@ one by itself.
 |---|---|
 | The orders the agent acts on | documents with embedded refunds; eval data expires by TTL |
 | Every run's trace | `runs` |
-| Memory | Vector Search over `incidents`, `$lookup` to promoted and rejected attempts |
+| Memory | `incidents`, joined by `$lookup` to promoted and rejected attempts |
 | The versioned harness | `policies` — version, hash, parent, diff, provenance |
 | Evaluation | `eval_cases`, `eval_runs` |
 | Live reload | a change stream on `active_config` |
 
-Models come through OpenRouter; embeddings from Atlas Automated Embeddings or Voyage AI.
+Models come through OpenRouter: GPT-5.4 mini runs the agent, GPT-6 Sol proposes fixes.
 
 ## Run it
 
@@ -88,7 +89,7 @@ npm run dev
   `order-2`, `grant`, `refund-1`, `order-n`). No database or keys needed.
 - `http://localhost:3000/` polls the engine at `/api/state`.
 
-`npm run reset` and `npm run beat <name>` arrive with the engine.
+`npm run reset` wipes and reseeds Atlas; `npm run beat order-1` runs a beat from the CLI.
 
 ## Layout
 

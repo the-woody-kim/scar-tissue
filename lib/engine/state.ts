@@ -67,7 +67,7 @@ export async function consoleState(): Promise<ConsoleState> {
     : await storedView(d);
 
   const versions: VersionView[] = (await d.collection("policies").find({ status: { $in: ["active", "superseded"] } }).sort({ version: 1 }).toArray()).map((p) => ({
-    version: p.version, hash: p.hash, origin: p.origin, ...(p.trigger?.incidentIds?.length === 1 ? { incident: Number(String(p.trigger.incidentIds[0]).replace("inc_", "")) } : {}), ...(p.evalRunId ? { evalRunId: p.evalRunId } : {}),
+    version: p.version, hash: p.hash, origin: p.origin === "operator" ? "granted" : p.origin, ...(p.trigger?.incidentIds?.length === 1 ? { incident: Number(String(p.trigger.incidentIds[0]).replace("inc_", "")) } : {}), ...(p.evalRunId ? { evalRunId: p.evalRunId } : {}),
   }));
 
   return {

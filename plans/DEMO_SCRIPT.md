@@ -1,53 +1,40 @@
 # Demo script — Scar Tissue
 
 Two versions: the **1-minute submission video** (required) and the **live finals demo** (only if
-you make the top 6).
+you make the top 6). Every number said aloud must be the one on screen in that take.
 
-Every number said aloud must be one measured in that take. The numbers in brackets are
-placeholders.
+Measured on 2026-09-26, 14:35, from reset: order-1 ≈ 20 s (incident → three candidates → v2),
+order-2 ≈ 6 s, grant ≈ 28 s (transfer → v4), refund-1 ≈ 6 s. Speed-ramp the two long ones with
+a visible "4×".
 
 ---
 
 ## A. The 1-minute submission video
 
-The guide asks for a video "showing the code & functionality your team built today", with audio.
-138 words of voiceover — brisk, but it fits.
-
 ### Before recording
 
-1. `npm run reset` — a wiped database; the first click is the cold path.
-2. `next start` running; browser full screen (⌃⌘F) at 110%, so the whole 1536 × 920 page is in
-   frame; notifications off.
-3. Header shows **LIVE**. Only use a REPLAY take as the backup, and leave the badge visible.
-4. ⌘⇧5, full screen, microphone on. Record the screen first; the voiceover can go over it after.
-5. Editor tabs ready for the code shot: `lib/harness/evaluator.ts`, and the Atlas Data Explorer
-   open on `policies`.
-6. The fault picker on its default, `timeout after saving`.
+1. `npm run build && npm run start` (or the dev server), then **Reset demo** on the page — the
+   first click in the video is the cold path. Header shows **LIVE** and `Policy v1 2/2`.
+2. Browser full screen (⌃⌘F) at 110%, so the whole 1536 × 920 page is in frame. Notifications off.
+3. ⌘⇧5, full screen, microphone on. Record the screen first; the voiceover can go over it after.
+4. A second tab open on the Atlas Data Explorer, `scar_tissue.policies`, for the code shot.
+5. The fault picker on its default, `timeout after saving`. Nobody else clicks the page.
 
 ### Script
 
 | Time | On screen | Voiceover |
 |---|---|---|
-| 0:00–0:07 | Title over the empty page: **Scar Tissue — every failure, a tested upgrade** | "I've hand-written [41] lessons after my coding agents' mistakes. Scar Tissue writes its own — and tests them first." |
-| 0:07–0:15 | Click **Assign prep #1**. Trace: `assign_prep` → TIMEOUT → retried → ok. Check line turns red: *prep rituals for this class: 2 — expected 1* | "The gym's API times out after saving. The default retry assigns the ritual twice." |
-| 0:15–0:30 | 02 fills in (speed-ramped, "4×" visible): incident → candidates → case dots → **REJECTED** on *never retry*, **PROMOTED** on *check before retrying*. Pill: `v2 · [4/4]`, then *reloaded via change stream* | "The harness proposes fixes. 'Never retry' fails a case where retrying is right: rejected. 'Check before retrying' passes every case: promoted. The running agent reloads it live." |
-| 0:30–0:34 | Click **Assign prep #2**. Trace: TIMEOUT → *verify_before_retry → found → adopted*. Check line green: 1 | "Same fault, next athlete: one ritual." |
-| 0:34–0:47 | Click **Grant log_recovery**. 03: hits with scores, the rejected attempt underneath, *transferred as tests*. 02: recovery candidate → **PROMOTED**, `v4 · [9/9]`. Click **Log recovery #1** → one recovery entry | "Now it gets a new tool: logging recovery after class. Atlas Vector Search recalls the scar, and the fix it rejected. It turns the lesson into a recovery test, fixes the policy, and the first log is written once." |
-| 0:47–0:56 | Atlas Data Explorer: the v4 document — its four sections, `hash`, `trigger`, `evalRunId`. Quick cut to the invariants in `evaluator.ts` | "Each version is a MongoDB document with its hash, its incident and the test run that earned it. The evaluator is code the agent can't touch." |
-| 0:56–1:00 | End card: **Scar Tissue** · repo URL | "Scar Tissue. Every failure, a tested upgrade." |
+| 0:00–0:06 | Title over the page: **Scar Tissue — every failure, a tested upgrade** | "Agents that take actions repeat their mistakes. Scar Tissue turns each one into a tested fix." |
+| 0:06–0:14 | Click **Run order #1**. Trace: `create_order` → TIMEOUT → retried → ok. Check turns red: *2 orders — expected 1* | "The order API times out after saving. The default retry orders twice." |
+| 0:14–0:30 | (4×) Harness fills in: three candidates. **REJECTED** on the no-retry rule (fails `order.transient`), **REJECTED** on the tool note, **PROMOTED → v2** on the guardrail. Pill `v2 · 4/4`; *reloaded via change stream* | "The harness proposes three fixes. 'Never retry' fails a case where retrying is right. A note to the agent still orders twice. 'Verify before retry' passes every case, and the running agent reloads it from Atlas." |
+| 0:30–0:35 | Click **Run order #2**. Trace: TIMEOUT → `find_orders` found → *adopted*. Check green: 1 | "Same fault, next customer: one order." |
+| 0:35–0:47 | Click **Grant issue_refund** (4×): `v3 before · 7/9`, the scar transferred as refund tests, **PROMOTED → v4 · 9/9**. Click **Run refund #1** → adopted, one refund | "Now it gets a refund tool it has never used. It turns the order lesson into refund tests, fixes itself before the first refund, and that refund goes through once." |
+| 0:47–0:56 | Atlas Data Explorer: the v4 document — `policy`, `hash`, `trigger`, `evalRunId`. Quick cut to `judge()` in `lib/engine/harness.ts` | "Every version is a MongoDB document with its hash, its trigger and the test run that earned it. The evaluator is code the agent can't touch." |
+| 0:56–1:00 | End card: **Scar Tissue** · github.com/the-woody-kim/scar-tissue | "Scar Tissue. Every failure, a tested upgrade." |
 
-**The [41]:** 18 feedback + 23 environment lessons in the agent memory, counted 09-25. Recount
-before recording, or drop the number.
-
-**If the transfer was cut (cut list #3),** replace 0:34–0:47 with: click **Log recovery #1** → a
-duplicate recovery entry → recall → one attempt → promoted. Voiceover: *"Same fault on the recovery tool. It
-slips once — then Vector Search recalls the scar and the fix it rejected, and one attempt fixes
-it."*
-
-**If no candidate was rejected in a take,** don't stage one. Record another live take, or change
-the line to what happened.
-
-**If a candidate was SCREENED in the take,** leave it on screen; the voiceover doesn't change.
+**Say what the take shows.** Candidate names and which ones lose come from the model each run. If
+the take differs (say, only one candidate is rejected), change the line to match — never stage
+one. If nothing was rejected, record another take.
 
 ### After recording
 
@@ -58,46 +45,27 @@ the line to what happened.
 
 ## B. The live finals demo (top 6 on 09-26; .local on 09-30)
 
-The length is set by the organisers — this runs about 3 minutes; trim the story first.
+About 3 minutes; trim the story first.
 
-**[0:00–0:30] Where it came from**
-"I built an iOS app with coding agents, and I kept a folder of lessons — one for every mistake
-they made. [41] of them. One guard, a hook that blocks a single command, took three versions.
-The first blocked too much: it fired on documentation that merely mentioned the command. The next
-allowed anything it didn't understand. The fix was a third answer — *uncertain* — that never gets
-the benefit of the doubt. That is the loop Scar Tissue automates, and its evaluator keeps the same
-rule: uncertain never ships."
+**[0:00–0:30] Why** — "Agents that take real actions hit retry-after-success in production, and
+the fix today is a human postmortem. I wanted the postmortem to be executable: an incident
+becomes a test, the test gates the fix, and the fix travels to tools that haven't failed yet."
 
-(Naming the app is your call. The story works without it; keep repo names and incident details
-out.)
-
-**[0:30–2:15] Live, narrated** — the four beats from the video, slower, then the restart beat:
-- *Kill the server, run `next start` again.* "The runtime reads `active_config` on boot." The pill
-  still shows v4 with the same hash.
+**[0:30–2:15] Live** — the four beats, slower. Then:
 - *Hand the fault picker to a judge.* "Pick any fault. Only the injector knows what you chose."
-  Press *Assign another prep* → one ritual, whatever they picked (what each pick should do:
-  `SPEC.md` §10). If a pick fails the check, it's an incident: narrate the harness learning from
-  it. Don't restart.
-- *If a candidate was SCREENED:* "That one named the athlete. It never ran — a fix has to work
-  for everyone."
+  Press *Run another order* → one order, whatever they picked. If a pick fails the check, it's an
+  incident: narrate the harness learning from it. Don't restart.
 - Click the pill → the case grid. "Every number opens the cases behind it."
+- *If a candidate was SCREENED:* "That one named the customer. It never ran — a fix has to work
+  for everyone."
 
-**[2:15–2:45] Why it matters**
-"A coach reads these records to decide whom to chase; a duplicate sends them after an athlete who
-did the work. Agents that write records — rituals here, a D1 program's next, payments anywhere —
-all hit retry-after-success. Today the fix is a human postmortem and a patch. Scar Tissue makes the postmortem executable: an
-incident becomes a test, the test gates the fix, and the fix travels to tools that haven't
-failed yet. The model writes candidates. Code decides. MongoDB remembers — including what didn't
-work."
-
-**[2:45–3:00] Close**
-"The agent is the same model at the end as at the start. Its harness is on version [4], and every
-version has a test run that earned it. Scar Tissue."
+**[2:15–3:00] Close** — "The model writes candidates. Code decides. MongoDB remembers — including
+what didn't work. The agent is the same model at the end as at the start. Its harness is on
+version 4, and every version has a test run that earned it."
 
 ### Backup
 
-- The recorded take from T+5:25 (`~/scar-tissue/plans/backup.mov`).
-- Switch line: "Here's the run from this afternoon —" and keep going.
+- The recorded take. Switch line: "Here's the run from this afternoon —" and keep going.
 
 ### Commands
 

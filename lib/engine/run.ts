@@ -291,21 +291,30 @@ export interface Report {
 
 export async function execute(run: Run, policy: Policy, task: Task): Promise<Report> {
   if (run.scripted) return executeScripted(run, task);
-  return executeModel(run, policy, task);
+  return executeModel(run, policy, taskText(task));
 }
 
+// A visitor's own words as the task, same loop and same policy as a beat.
+// Beats name the SKU and customer id; a visitor won't, so the prompt run also gets the catalog.
+export const executePrompt = (run: Run, policy: Policy, prompt: string, customers: { id: string; name: string }[]) =>
+  executeModel(run, policy, prompt, [
+    "Catalog (sku: item, price): " + Object.entries(CATALOG).map(([k, v]) => `${k}: ${v.name}, $${(v.cents / 100).toFixed(2)}`).join("; "),
+    "Customers (id: name): " + customers.map((c) => `${c.id}: ${c.name}`).join("; "),
+  ]);
+
 // The model's tool loop, traced as one "agent" span with each model call under it.
-const executeModel = span("agent", async (run: Run, policy: Policy, task: Task): Promise<Report> => {
+const executeModel = span("agent", async (run: Run, policy: Policy, text: string, extra: string[] = []): Promise<Report> => {
   const notes = Object.entries(policy.context.toolNotes).map(([t, n]) => `- ${t}: ${n}`);
   const system = [
     "You are the order agent for Northside Grocer. Complete the task with the tools, then call report exactly once:",
     'status "done" if the task\'s effect happened, "failed" if it did not, "escalated" if you cannot tell. One-sentence summary.',
     ...(notes.length ? ["Notes on tools:", ...notes] : []),
+    ...extra,
   ].join("\n");
   const tools = ["find_orders", ...policy.tools.enabled.filter((t) => t !== "find_orders"), "report"].map((t) => TOOL_DEFS[t]).filter(Boolean);
   const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
     { role: "system", content: system },
-    { role: "user", content: taskText(task) },
+    { role: "user", content: text },
   ];
   for (let turn = 0; turn < 8; turn++) {
     if (run.halted) {
@@ -332,7 +341,7 @@ const executeModel = span("agent", async (run: Run, policy: Policy, task: Task):
     }
   }
   return { status: null, summary: "" };
-}, (_run, policy, task) => ({ task: taskText(task), policyHash: hash(policy) }), (r) => ({ ...r }));
+}, (...[, policy, text]: [Run, Policy, string, string[]?]) => ({ task: text, policyHash: hash(policy) }), (r) => ({ ...r }));
 
 // The agent's plan for a task, without the model: one mutating call, then an honest report.
 async function executeScripted(run: Run, task: Task): Promise<Report> {

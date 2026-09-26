@@ -5,7 +5,7 @@ import type { CandidateView, Outcome, StepView } from "@/lib/state";
 import { db } from "./db";
 import { chat, models } from "./llm";
 import { BASELINE, Change, Policy, apply, diffLines, hash } from "./policy";
-import { CATALOG, Run, execute, taskText, type FaultPlanEntry, type Report, type Task } from "./run";
+import { CATALOG, Run, execute, executePrompt, taskText, type FaultPlanEntry, type Report, type Task } from "./run";
 import { span } from "./trace";
 
 // ── Cases ───────────────────────────────────────────────────────────────────
@@ -353,31 +353,108 @@ async function playBeat(beat: string, pick?: Pick) {
     task: { kind: task.kind, customer: task.customer, detail }, picked: pick && pick !== "after_commit" ? pick : null,
     steps: run.steps, report, check,
   });
-  if (!check.ok) await onIncident(d, runId, task, run.steps, { version, policy }, effects);
+  if (!check.ok) {
+    const tool = task.kind === "refund" ? "issue_refund" : "create_order";
+    const literals = [task.customer.id, task.customer.name, ...task.customer.name.split(" "), ...(task.kind === "place_order" ? [task.sku] : [task.orderId]), ...run.steps.map((s) => s.result?.ref ?? "")].filter(Boolean);
+    await onIncident(d, runId, { tool, noun: task.kind === "refund" ? "refund" : "order", text: taskText(task), literals, status }, run.steps, { version, policy }, effects, [`${effects} ${check.noun}s for 1 request`]);
+  }
 }
 
-async function onIncident(d: Db, runId: string, task: Task, steps: StepView[], parent: { version: number; policy: Policy }, effects: number) {
-  const tool = task.kind === "refund" ? "issue_refund" : "create_order";
+interface IncidentInput {
+  tool: "create_order" | "issue_refund";
+  noun: "order" | "refund";
+  text: string; // the task as the agent got it
+  literals: string[]; // ids and names a candidate may not name (the leakage screen)
+  status: string; // what the agent reported
+}
+
+// Every failed check is stored as an incident. Only a timeout followed by a duplicate is learned
+// from: that is the fault the evaluator has cases for. Anything else waits for a human.
+async function onIncident(d: Db, runId: string, inc: IncidentInput, steps: StepView[], parent: { version: number; policy: Policy }, effects: number, violations: string[]) {
+  const { tool, noun } = inc;
   const n = (await d.collection("incidents").countDocuments({ origin: "live" })) + 1;
-  const noun = task.kind === "refund" ? "refund" : "order";
   const timedOut = steps.some((s) => s.tool === tool && s.result?.kind === "timeout");
-  const summary = timedOut && effects > 1
+  const learnable = timedOut && effects > 1;
+  const summary = learnable
     ? `${tool} timed out after the ${noun} was saved; the retry placed it again.`
-    : `${tool}: ${effects} ${noun}s for one request.`;
+    : violations[0] ?? `${tool}: ${effects} ${noun}s for one request.`;
   const incidentId = `inc_${n}`;
   await d.collection("incidents").insertOne({
     _id: incidentId as never, n, origin: "live", runId, tool, toolKind: "mutating",
-    pattern: [{ tool, call: 1, fault: "timeout_after_commit" }], violations: [`${effects} ${noun}s for 1 request`], summary, createdAt: new Date(),
+    pattern: learnable ? [{ tool, call: 1, fault: "timeout_after_commit" }] : [], violations, summary, createdAt: new Date(),
   });
-  if (!(timedOut && effects > 1)) return;
+  if (!learnable) return;
   const trace = steps.map((s) => `${s.actor} ${s.tool}(${s.args.join(", ")}) → ${s.result?.kind ?? s.note ?? ""}${s.result?.ref ? " " + s.result.ref : ""}${s.clause ? " [" + s.clause + "]" : ""}`).join("\n");
-  const literals = [task.customer.id, task.customer.name, ...task.customer.name.split(" "), ...(task.kind === "place_order" ? [task.sku] : [task.orderId]), ...steps.map((s) => s.result?.ref ?? "")].filter(Boolean);
   await learn(d, {
     kind: "incident", parent, triggerIncidentIds: [incidentId], newCases: derivedCases(tool, "incident", n, incidentId),
-    brief: `Incident #${n}: ${summary}\nTask: ${taskText(task)}\nTrace (what production saw):\n${trace}\nAfter the run the database held ${effects} ${noun}s for one request, and the agent reported done.`,
-    literals, incident: { n, summary }, tool,
+    brief: `Incident #${n}: ${summary}\nTask: ${inc.text}\nTrace (what production saw):\n${trace}\nAfter the run the database held ${effects} ${noun}s for one request, and the agent reported ${inc.status}.`,
+    literals: inc.literals, incident: { n, summary }, tool,
     query: { title: "Recall", label: `Incident #${n}`, text: summary },
   });
+}
+
+// ── Prompt: a visitor's own request, checked by fixed invariants ────────────
+
+const KNOWN = [
+  { id: "c_2041", name: "Ana Ruiz" }, { id: "c_3317", name: "Marcus Chen" }, { id: "c_1180", name: "Priya Nair" },
+  ...CUSTOMERS.map(({ id, name }) => ({ id, name })),
+];
+
+export const runPrompt = span("prompt", playPrompt, (prompt, pick) => ({ prompt, pick: pick ?? "none" }));
+
+async function playPrompt(prompt: string, pick: Pick = "none") {
+  const d = await db();
+  void (await import("./state")).watchActiveConfig();
+  const { version, policy } = await activePolicy(d);
+  const runs = d.collection("runs");
+  const runId = `r_${Date.now().toString(36)}`;
+  const startedAt = new Date();
+  // The pick applies to whichever mutating tool the agent calls first; the lookup outage, once.
+  const plan = [...planFor(pick, "create_order"), ...planFor(pick, "issue_refund")].filter((e, i, all) => all.findIndex((x) => JSON.stringify(x) === JSON.stringify(e)) === i);
+  const run = new Run({ db: d, scope: "live", runId, policy, plan, timeoutMs: 1500, expiresAt: null });
+  const report = await executePrompt(run, policy, prompt, KNOWN);
+  const status = report.status ?? "failed";
+  const inv = await invariants(d, runId, status, run.steps);
+  const check = { noun: inv.noun, effects: inv.effects, expected: inv.expected, scope: "live", report: { status, agrees: inv.agrees }, ok: inv.violations.length === 0, violations: inv.violations };
+  const who = KNOWN.find((c) => run.steps.some((s) => s.args.includes(c.id))) ?? { id: String(run.steps.find((s) => s.tool !== "report")?.args[0] ?? "—"), name: "a visitor's customer" };
+  const n = (await runs.countDocuments({ beat: "prompt" })) + 1;
+  await runs.insertOne({
+    _id: runId as never, scope: "live", beat: "prompt", title: `Prompt #${n}`, startedAt, policyVersion: version, policyHash: hash(policy),
+    task: { kind: inv.noun === "refund" ? "refund" : "place_order", customer: who, detail: prompt, prompt: true }, picked: pick !== "none" ? pick : null,
+    steps: run.steps, report, check,
+  });
+  if (!check.ok) {
+    const tool = inv.noun === "refund" ? "issue_refund" : "create_order";
+    const literals = [...KNOWN.flatMap((c) => (prompt.includes(c.name) || prompt.includes(c.id) ? [c.id, c.name, ...c.name.split(" ")] : [])),
+      ...run.steps.flatMap((s) => [...s.args.map(String).filter((a) => /^[a-z]{1,2}_[A-Za-z0-9]{3,}$|^[A-Z]{3}-/.test(a)), s.result?.ref ?? ""])].filter(Boolean);
+    await onIncident(d, runId, { tool, noun: inv.noun, text: prompt, literals, status }, run.steps, { version, policy }, inv.effects, inv.violations);
+  }
+}
+
+// Fixed invariants: true for any request, whatever it asked for. The visitor can't edit these.
+async function invariants(d: Db, runId: string, status: string, steps: StepView[]) {
+  const orders = await d.collection("orders").find({ scope: "live", runId }).toArray();
+  const touched = await d.collection("orders").find({ scope: "live", "refunds.runId": runId }).toArray();
+  const refunds = touched.flatMap((o) => (o.refunds as { runId: string; amountCents: number; reason: string }[]).filter((r) => r.runId === runId).map((r) => ({ ...r, orderId: o.orderId })));
+  const dup = (keys: string[]) => keys.length - new Set(keys).size;
+  const dupOrders = dup(orders.map((o) => `${o.customerId}|${o.sku}|${o.qty}`));
+  const dupRefunds = dup(refunds.map((r) => `${r.orderId}|${r.amountCents}|${r.reason}`));
+  const noun: "order" | "refund" = refunds.length > orders.length ? "refund" : "order";
+  const effects = noun === "refund" ? refunds.length : orders.length;
+  const violations: string[] = [];
+  if (dupOrders) violations.push(`${orders.length} orders for one request, ${dupOrders} of them identical`);
+  if (dupRefunds) violations.push(`${refunds.length} refunds for one request, ${dupRefunds} of them identical`);
+  for (const o of touched) {
+    const total = (o.refunds as { amountCents: number }[]).reduce((a, r) => a + Number(r.amountCents), 0);
+    if (total > o.amountCents) violations.push(`refunds on ${o.orderId} total $${(total / 100).toFixed(2)}, more than the order's $${(o.amountCents / 100).toFixed(2)}`);
+  }
+  for (const r of refunds) if (!(r.amountCents > 0)) violations.push(`a refund of ${r.amountCents} cents on ${r.orderId}`);
+  const made = orders.length + refunds.length;
+  const tried = steps.some((s) => s.tool === "create_order" || s.tool === "issue_refund");
+  let agrees = true;
+  if (status === "failed" && made > 0) { agrees = false; violations.push(`the agent reported failed, but ${made === 1 ? "1 change was" : `${made} changes were`} made`); }
+  if (status === "done" && tried && made === 0) { agrees = false; violations.push("the agent reported done, but nothing was made"); }
+  return { noun, effects, expected: effects - (noun === "refund" ? dupRefunds : dupOrders), agrees, violations };
 }
 
 const grant = span("grant issue_refund", grantRefund, () => ({ tool: "issue_refund" }));

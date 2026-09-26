@@ -20,6 +20,7 @@ const FIXTURE_FOR: Record<BeatId | "reset", string> = {
   "grant-issue_refund": "grant",
   "refund-1": "refund-1",
   "order-n": "order-n",
+  prompt: "order-n",
 };
 
 export default function Console({ initial, fixture }: { initial?: ConsoleState; fixture?: string }) {
@@ -67,6 +68,7 @@ export default function Console({ initial, fixture }: { initial?: ConsoleState; 
     if (fixture) router.push(`/?fixture=${FIXTURE_FOR[beat]}`);
     else post("/api/beat", { beat, ...(fault ? { fault } : {}) });
   };
+  const onPrompt = (prompt: string, fault: FaultPick) => post("/api/try", { prompt, fault });
   const onReset = () => {
     if (fixture) router.push("/?fixture=reset");
     else post("/api/reset");
@@ -78,7 +80,7 @@ export default function Console({ initial, fixture }: { initial?: ConsoleState; 
     <main className="flex min-h-screen items-center justify-center">
       {state && story ? (
         <div className="flex h-[920px] w-[1536px] overflow-hidden">
-          <Sidebar state={state} story={story} fixture={fixture} onBeat={onBeat} onReset={onReset} />
+          <Sidebar state={state} story={story} fixture={fixture} onBeat={onBeat} onPrompt={onPrompt} onReset={onReset} />
           <div className="flex min-w-0 grow flex-col gap-5 px-8 py-7">
             <header className="flex shrink-0 items-start justify-between gap-8">
               <div className="flex min-w-0 flex-col gap-1">

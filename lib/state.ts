@@ -6,10 +6,11 @@
 //   GET  /api/state                          → ConsoleState (polled every 500 ms)
 //   POST /api/beat   { beat: BeatId, fault? } → runs a beat; `fault` is the picker's value and
 //                                               applies to that run only
+//   POST /api/try    { prompt, fault? }      → a visitor's own request, judged by fixed invariants
 //   POST /api/reset                          → wipes and reseeds, like `npm run reset`
 
 export type Mode = "live" | "replay";
-export type BeatId = "order-1" | "order-2" | "grant-issue_refund" | "refund-1" | "order-n";
+export type BeatId = "order-1" | "order-2" | "grant-issue_refund" | "refund-1" | "order-n" | "prompt";
 export type FaultPick = "after_commit" | "before_commit" | "after_commit_lookup_down" | "none";
 export type Fault = "timeout_after_commit" | "timeout_before_commit" | "lookup_error";
 export type Outcome = "pass" | "fail" | "uncertain";
@@ -55,7 +56,8 @@ export interface RunView {
   task: {
     kind: "place_order" | "refund";
     customer: { id: string; name: string };
-    detail: string; // "2 × Oat Milk 1L (OAT-1L) at $4.49."
+    detail: string; // "2 × Oat Milk 1L (OAT-1L) at $4.49."; a prompt run's own words
+    prompt?: true; // typed by a visitor, not a scripted beat
   };
   picked: FaultPick | null; // set when the run used a fault-picker pick
   steps: StepView[];
@@ -87,6 +89,7 @@ export interface CheckView {
   scope: string; // "live"
   report: { status: "done" | "failed" | "escalated"; agrees: boolean };
   ok: boolean;
+  violations?: string[]; // prompt runs: which fixed invariant broke, in plain words
 }
 
 // ── 02 · Harness ────────────────────────────────────────────────────────────

@@ -35,10 +35,16 @@ function Task({ run }: { run: RunView }) {
   const { task } = run;
   return (
     <div className="flex flex-col gap-1.5">
-      <p className="text-[14.5px]">
-        {task.kind === "refund" ? "Refund" : "Place an order for"} <strong className="font-semibold">{task.customer.name}</strong>{" "}
-        <span className="font-mono text-xs text-muted">{task.customer.id}</span>: {task.detail}
-      </p>
+      {task.prompt ? (
+        <p className="text-[14.5px]">
+          <span className="text-muted">Typed by a visitor: </span>&ldquo;{task.detail}&rdquo;
+        </p>
+      ) : (
+        <p className="text-[14.5px]">
+          {task.kind === "refund" ? "Refund" : "Place an order for"} <strong className="font-semibold">{task.customer.name}</strong>{" "}
+          <span className="font-mono text-xs text-muted">{task.customer.id}</span>: {task.detail}
+        </p>
+      )}
       {run.picked && (
         <span className="flex items-center gap-2 text-[12.5px] text-muted">
           Picked live

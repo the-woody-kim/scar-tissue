@@ -64,7 +64,7 @@ export async function consoleState(): Promise<ConsoleState> {
 
   const memory: MemoryView = showLearning
     ? { kind: "recall", title: learning.recall.title, index: "$lookup", of: await d.collection("incidents").countDocuments(), query: { label: learning.recall.label, text: learning.recall.text }, hits: learning.recall.hits.map((h: IncidentView) => ({ ...h, score: undefined })), ...(learning.kind === "grant" ? { transferred: { incident: 1, tool: "issue_refund", cases: learning.newCases, note: `Scars turned into cases for the new tool. v${learning.before.version} passed ${learning.before.pass}/${learning.before.total} before any refund had run.` } } : {}) }
-    : await storedView(d);
+    : await storedView(d, (last?.check as { ok?: boolean } | undefined)?.ok !== false);
 
   const versions: VersionView[] = (await d.collection("policies").find({ status: { $in: ["active", "superseded"] } }).sort({ version: 1 }).toArray()).map((p) => ({
     version: p.version, hash: p.hash, origin: p.origin === "operator" ? "granted" : p.origin, ...(p.trigger?.incidentIds?.length === 1 ? { incident: Number(String(p.trigger.incidentIds[0]).replace("inc_", "")) } : {}), ...(p.evalRunId ? { evalRunId: p.evalRunId } : {}),
@@ -97,6 +97,7 @@ function activeView(active: { version: number; policy: Policy }, policy: { evalR
 }
 
 async function cleanExtras(d: Db, last: Record<string, unknown>) {
+  if ((last.task as { prompt?: true }).prompt) return {}; // a visitor's request isn't a rerun of the incident
   const incidentRun = await d.collection("runs").findOne({ "check.ok": false, "task.kind": (last.task as { kind: string }).kind }, { sort: { startedAt: 1 } });
   if (!incidentRun || incidentRun._id === last._id) return {};
   const summary = (r: Record<string, unknown>) => {
@@ -119,9 +120,9 @@ function runView(r: Record<string, unknown>): RunView {
   };
 }
 
-async function storedView(d: Db): Promise<MemoryView> {
+async function storedView(d: Db, passed: boolean): Promise<MemoryView> {
   const all = await recallFor(d, "create_order");
   const live = all.filter((h) => h.origin === "live");
   const seed = all.filter((h) => h.origin === "seed").map((h) => ({ tool: h.tool, summary: h.summary }));
-  return { kind: "stored", counts: { live: live.length, seed: seed.length }, note: live.length ? "No recall this run — the check passed, so nothing new was stored." : null, live, seed };
+  return { kind: "stored", counts: { live: live.length, seed: seed.length }, note: !passed ? "No recall this run — the incident was stored, but it isn't the retry fault the harness learns from." : live.length ? "No recall this run — the check passed, so nothing new was stored." : null, live, seed };
 }

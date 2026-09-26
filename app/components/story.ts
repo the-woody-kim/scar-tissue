@@ -75,12 +75,18 @@ export function tell(state: ConsoleState): Story {
             ? "clean"
             : "idle";
 
-  const viewing = state.beats.findIndex((b) => b.id === state.running) >= 0
-    ? state.beats.findIndex((b) => b.id === state.running)
-    : state.beats.map((b) => b.status).lastIndexOf("done");
+  // A visitor's prompt belongs to no beat, so no beat is highlighted while it's on screen.
+  const typed = !!run?.task.prompt && (mode === "clean" || mode === "learn" || state.running === "prompt");
+  const viewing = typed
+    ? -1
+    : state.beats.findIndex((b) => b.id === state.running) >= 0
+      ? state.beats.findIndex((b) => b.id === state.running)
+      : state.beats.map((b) => b.status).lastIndexOf("done");
   const eyebrow = state.running
     ? "Running"
-    : run?.picked && mode === "clean"
+    : typed
+      ? "Visitor request"
+      : run?.picked && mode === "clean"
       ? "Live pick"
       : viewing >= 0
         ? `Beat ${viewing + 1} of ${state.beats.length}`
@@ -157,6 +163,9 @@ function headline(state: ConsoleState, mode: Mode, winner: CandidateView | null,
       ...actions(winner, losers, h.before.version),
       { t: "." },
     ];
+  }
+  if (!check.ok && check.violations?.length) {
+    return [{ t: `${run.title} broke a fixed check: ` }, { t: check.violations.join("; "), tone: "fail" }, { t: ". Stored as an incident; nothing was learned from it." }];
   }
   if (!check.ok) {
     return [{ t: `${run.title} made ` }, made, { t: ` for one request, expected ${check.expected}. Nothing was learned from it.` }];
@@ -269,7 +278,9 @@ function tiles(state: ConsoleState, mode: Mode, winner: CandidateView | null, ca
         tone: check.ok ? "win" : "fail",
         value: String(check.effects),
         unit: check.effects === 1 ? check.noun : `${check.noun}s`,
-        caption: `Expected ${check.expected}. ${check.report.agrees ? "The report agrees." : `The agent said ${check.report.status}.`}`,
+        caption: check.violations?.length
+          ? cap(check.violations[0]) + "."
+          : `Expected ${check.expected}. ${check.report.agrees ? "The report agrees." : `The agent said ${check.report.status}.`}`,
       }
     : { phase: "Run · Check", tone: "wait", value: "—", unit: "no run", caption: "" };
 
@@ -290,11 +301,16 @@ function tiles(state: ConsoleState, mode: Mode, winner: CandidateView | null, ca
   }
 
   // clean
-  const skipped = check && !check.ok ? "The check failed; nothing was stored" : "The check passed; nothing to learn";
+  // A failed check is always stored as an incident; only a timeout followed by a duplicate is learned from.
+  const incidentTile: Tile = check && !check.ok
+    ? { phase: "Incident · Recall", tone: "fail", value: "1", unit: "incident stored", caption: "Not the retry fault, so nothing to learn" }
+    : { phase: "Incident · Recall", tone: "wait", value: "—", unit: "no incident", caption: "The check passed; nothing to learn" };
   return [
     runTile,
-    { phase: "Incident · Recall", tone: "wait", value: "—", unit: "no incident", caption: skipped },
+    incidentTile,
     { phase: "Propose · Eval", tone: "wait", value: "—", unit: "no change", caption: "Nothing proposed" },
     heldTile,
   ];
 }
+
+const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);

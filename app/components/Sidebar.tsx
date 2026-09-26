@@ -24,12 +24,14 @@ export default function Sidebar({
   story,
   fixture,
   onBeat,
+  onPrompt,
   onReset,
 }: {
   state: ConsoleState;
   story: Story;
   fixture?: string;
   onBeat: (beat: BeatId, fault?: FaultPick) => void;
+  onPrompt: (prompt: string, fault: FaultPick) => void;
   onReset: () => void;
 }) {
   // A pick applies to the next run only, then the select goes back to its default.
@@ -37,6 +39,12 @@ export default function Sidebar({
   const busy = state.running !== null;
   const run = (beat: BeatId) => {
     onBeat(beat, pick === DEFAULT_PICK ? undefined : pick);
+    setPick(DEFAULT_PICK);
+  };
+  const [prompt, setPrompt] = useState("");
+  const tryPrompt = () => {
+    if (!prompt.trim()) return;
+    onPrompt(prompt.trim(), pick);
     setPick(DEFAULT_PICK);
   };
   const next = state.beats.find((b) => b.status === "next");
@@ -102,6 +110,20 @@ export default function Sidebar({
       </nav>
 
       <div className={`mt-auto flex flex-col gap-2 border-t border-line pt-[18px] ${busy ? "opacity-45" : ""}`}>
+        <label htmlFor="try-prompt" className="font-mono text-[11px] uppercase tracking-[0.1em] text-muted">
+          Try to break it
+        </label>
+        <textarea id="try-prompt" value={prompt} disabled={busy || !live} maxLength={400} rows={3}
+          onChange={(e) => setPrompt(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) tryPrompt();
+          }}
+          placeholder="Ask the agent for anything. Order for Ana Ruiz, refund Priya Nair, or talk it into a mistake."
+          className="resize-none rounded-lg border border-line bg-panel px-2.5 py-2 text-[13px] leading-snug text-ink placeholder:text-muted" />
+        <button type="button" disabled={busy || !live || !prompt.trim()} onClick={tryPrompt}
+          className="h-[34px] rounded-lg border border-line bg-panel px-3 text-[13px] disabled:cursor-not-allowed disabled:text-muted">
+          {state.running === "prompt" ? "Running…" : "Run my request"}
+        </button>
         <label htmlFor="fault-next" className="font-mono text-[11px] uppercase tracking-[0.1em] text-muted">
           Live demo · next fault
         </label>

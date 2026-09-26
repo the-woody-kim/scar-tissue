@@ -38,8 +38,9 @@ one refund. Same model throughout; only the harness changed.
 **Benchmarked on held-out tasks:** the same executor model, run live on 11 tasks × faults it never
 learned from (3 runs each), was correct 36% of the time under the starting policy and 88% under the
 policy it wrote for itself; duplicate orders and refunds fell from 64% to 6% of runs. Only the harness
-changed. Two of the 33 learned runs still went wrong (a refund reported done but not made), and two
-more hit a rate limit. Both arms are LangSmith experiments on one dataset, compared side by side.
+changed. Four of the 33 learned runs still missed: two reported a refund done that was never made,
+and two hit a rate limit mid-run and made a duplicate (the 6%). Both arms are LangSmith experiments
+on one dataset, compared side by side.
 
 **Try to break it:** anyone can type their own request into the page. The agent runs it on the
 active policy, and fixed invariants judge the result: no duplicate orders or refunds, no refund
@@ -67,12 +68,10 @@ Any agent that calls tools over MCP runs under the active policy; a Strands agen
 **Why it matters:** harnesses, not bigger models, are where agents get better — but an agent that
 takes real actions can't learn by trial and error in production. Scar Tissue gives it a gate.
 Agents that take actions hit retry-after-success in production, and today the fix is a human
-postmortem. Scar Tissue makes the postmortem executable and tested. RRSI (arXiv 2609.24972)
-showed recursive harness edits overfit unless regularized; this applies that discipline live, one
-incident at a time.
+postmortem. Scar Tissue makes the postmortem executable and tested.
 
-**Built with:** MongoDB Atlas (change streams, `$lookup`, TTL indexes), OpenRouter (GPT-5.4 mini
-executor, GPT-6 Sol proposer), LangSmith (tracing), MCP with Strands Agents, Next.js, TypeScript, zod.
+**Built with:** MongoDB Atlas (change streams, `$lookup`, TTL indexes), OpenRouter (the latest GPT mini
+as executor, the latest GPT Sol as proposer), LangSmith (tracing), MCP with Strands Agents, Next.js, TypeScript, zod.
 
 **What existed before hacking began at 10:30:** the plan, four screen mockups, the Next.js
 scaffold, and a static mock of the page that renders hand-written fixture JSON (commits `c362973`

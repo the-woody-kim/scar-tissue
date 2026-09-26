@@ -75,7 +75,8 @@ one by itself.
 | Evaluation | `eval_cases`, `eval_runs` |
 | Live reload | a change stream on `active_config` |
 
-Models come through OpenRouter: GPT-5.4 mini runs the agent, GPT-6 Sol proposes fixes.
+Models come through OpenRouter: the latest GPT mini runs the agent, the latest GPT Sol proposes
+fixes.
 
 ## Run it
 
@@ -128,10 +129,3 @@ worked on a different scenario earlier in the day; that work was set aside and i
 The plan was written the night before. Before hacking began at 10:30,
 the repo held the plan, screen mockups, the Next.js scaffold and a static mock of the page against
 fixture JSON (`c362973`, `a0f45b1`, 09:38). Everything that runs was built after 10:30.
-
-## Prior art
-
-RRSI ([arXiv 2609.24972](https://arxiv.org/abs/2609.24972), September 2026) showed on benchmarks
-that recursive harness edits overfit to the tasks that caused them unless they're regularized —
-edit budgets, a leakage screen, a no-regression floor. Scar Tissue applies the same discipline
-live, one production incident at a time.

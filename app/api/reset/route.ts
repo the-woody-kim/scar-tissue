@@ -1,3 +1,4 @@
+import { refuseInDemo } from "@/lib/engine/demo";
 import { reset } from "@/lib/engine/harness";
 import { acquire, holder, release } from "@/lib/engine/lock";
 import { runtime } from "@/lib/engine/state";
@@ -6,6 +7,8 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
 export async function POST() {
+  const refused = refuseInDemo();
+  if (refused) return refused;
   let token: string | null = null;
   try {
     token = await acquire("reset");

@@ -1,3 +1,4 @@
+import { refuseInDemo } from "@/lib/engine/demo";
 import { runPrompt, type Pick } from "@/lib/engine/harness";
 import { acquire, holder, release } from "@/lib/engine/lock";
 
@@ -10,6 +11,8 @@ const MAX = 400;
 // POST /api/try { prompt, fault? } — a visitor's own request, run by the agent on the active policy
 // and judged by the fixed invariants. Any time after a reset; one run at a time, like the beats.
 export async function POST(req: Request) {
+  const refused = refuseInDemo();
+  if (refused) return refused;
   const body = (await req.json().catch(() => ({}))) as { prompt?: unknown; fault?: Pick };
   const prompt = typeof body.prompt === "string" ? body.prompt.trim() : "";
   if (!prompt) return Response.json({ error: "type a request first" }, { status: 400 });

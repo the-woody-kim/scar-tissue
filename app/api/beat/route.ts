@@ -1,3 +1,4 @@
+import { refuseInDemo } from "@/lib/engine/demo";
 import { runBeat, type Pick } from "@/lib/engine/harness";
 import { acquire, holder, release } from "@/lib/engine/lock";
 import { consoleState } from "@/lib/engine/state";
@@ -10,6 +11,8 @@ const BEATS: BeatId[] = ["order-1", "order-2", "grant-issue_refund", "refund-1",
 const PICKS: Pick[] = ["after_commit", "before_commit", "after_commit_lookup_down", "none"];
 
 export async function POST(req: Request) {
+  const refused = refuseInDemo();
+  if (refused) return refused;
   const body = (await req.json().catch(() => ({}))) as { beat?: BeatId; fault?: Pick };
   if (!body.beat || !BEATS.includes(body.beat)) return Response.json({ error: "unknown beat" }, { status: 400 });
   if (body.fault && !PICKS.includes(body.fault)) return Response.json({ error: "unknown fault" }, { status: 400 });
